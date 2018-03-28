@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+	<dict>
+		<key>url</key>
+		<string>http://220.249.115.46:18080/wav/no.9.mp4</string>
+		<key>artist</key>
+		<string>T-ara </string>
+		<key>title</key>
+		<string>No.9</string>
+	</dict>
+	<dict>
+		<key>url</key>
+		<string>http://220.249.115.46:18080/wav/day_by_day.mp4</string>
+		<key>artist</key>
+		<string>T-ara</string>
+		<key>title</key>
+		<string>Day by day</string>
+	</dict>
+	<dict>
+		<key>url</key>
+		<string>http://220.249.115.46:18080/wav/Lovey_Dovey.mp4</string>
+		<key>artist</key>
+		<string>T-ara</string>
+		<key>title</key>
+		<string>Lovey Dovey(Drama Ver.)</string>
+	</dict>
+</array>
+</plist>

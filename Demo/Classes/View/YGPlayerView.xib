@@ -14,6 +14,9 @@
         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="xVp-Po-57j" customClass="YGPlayerView">
             <rect key="frame" x="0.0" y="0.0" width="375" height="207"/>
             <subviews>
+                <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="default_bg_land" translatesAutoresizingMaskIntoConstraints="NO" id="TKE-ir-nkp" userLabel="初始化占位图">
+                    <rect key="frame" x="0.0" y="0.0" width="375" height="207"/>
+                </imageView>
                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="MkO-jz-WQ2" userLabel="顶部条">
                     <rect key="frame" x="0.0" y="0.0" width="375" height="40"/>
                     <subviews>
@@ -74,7 +77,7 @@
                                 <constraint firstAttribute="width" constant="13" id="tH4-iG-aXm"/>
                                 <constraint firstAttribute="height" constant="15" id="tpr-Ef-rF8"/>
                             </constraints>
-                            <state key="normal" image="Stop.png"/>
+                            <state key="normal" image="Stop"/>
                             <connections>
                                 <action selector="playOrPauseAction" destination="xVp-Po-57j" eventType="touchUpInside" id="LKu-wv-LSO"/>
                             </connections>
@@ -85,7 +88,7 @@
                                 <constraint firstAttribute="width" constant="30" id="YcT-oR-VJC"/>
                                 <constraint firstAttribute="height" constant="33" id="fQ3-Qq-0JZ"/>
                             </constraints>
-                            <state key="normal" image="Rotation.png"/>
+                            <state key="normal" image="Rotation"/>
                             <connections>
                                 <action selector="rotateScreen:" destination="xVp-Po-57j" eventType="touchUpInside" id="mF3-gJ-BOy"/>
                             </connections>
@@ -167,9 +170,6 @@
                         <constraint firstAttribute="trailing" secondItem="NN6-pZ-z23" secondAttribute="trailing" constant="10" id="xak-FI-VBa"/>
                     </constraints>
                 </view>
-                <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" animating="YES" style="whiteLarge" translatesAutoresizingMaskIntoConstraints="NO" id="KCx-c8-y0y">
-                    <rect key="frame" x="169" y="85" width="37" height="37"/>
-                </activityIndicatorView>
                 <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="0Ab-OJ-Cwx">
                     <rect key="frame" x="327" y="119" width="40" height="40"/>
                     <constraints>
@@ -185,11 +185,13 @@
             <color key="backgroundColor" white="0.0" alpha="1" colorSpace="calibratedWhite"/>
             <constraints>
                 <constraint firstItem="ZKs-UR-zag" firstAttribute="top" secondItem="0Ab-OJ-Cwx" secondAttribute="bottom" constant="8" id="45n-vJ-R2P"/>
-                <constraint firstItem="KCx-c8-y0y" firstAttribute="centerY" secondItem="xVp-Po-57j" secondAttribute="centerY" id="6LU-RC-i5n"/>
                 <constraint firstItem="MkO-jz-WQ2" firstAttribute="top" secondItem="xVp-Po-57j" secondAttribute="top" id="6ci-jm-1z3"/>
+                <constraint firstAttribute="trailing" secondItem="TKE-ir-nkp" secondAttribute="trailing" id="FPU-bJ-iPr"/>
+                <constraint firstItem="TKE-ir-nkp" firstAttribute="top" secondItem="xVp-Po-57j" secondAttribute="top" id="MVP-3Y-uPu"/>
+                <constraint firstItem="TKE-ir-nkp" firstAttribute="leading" secondItem="xVp-Po-57j" secondAttribute="leading" id="Q78-di-57r"/>
+                <constraint firstAttribute="bottom" secondItem="TKE-ir-nkp" secondAttribute="bottom" id="UUu-V6-XMD"/>
                 <constraint firstItem="ZKs-UR-zag" firstAttribute="leading" secondItem="xVp-Po-57j" secondAttribute="leading" id="WF4-gi-cQa"/>
                 <constraint firstAttribute="trailing" secondItem="0Ab-OJ-Cwx" secondAttribute="trailing" constant="8" id="bA3-VC-2xF"/>
-                <constraint firstItem="KCx-c8-y0y" firstAttribute="centerX" secondItem="xVp-Po-57j" secondAttribute="centerX" id="cmJ-yw-uh8"/>
                 <constraint firstAttribute="trailing" secondItem="MkO-jz-WQ2" secondAttribute="trailing" id="equ-zY-ydh"/>
                 <constraint firstAttribute="bottom" secondItem="ZKs-UR-zag" secondAttribute="bottom" id="jh0-fk-mdl"/>
                 <constraint firstAttribute="trailing" secondItem="ZKs-UR-zag" secondAttribute="trailing" id="n6I-Mn-rtb"/>
@@ -204,6 +206,7 @@
                 <outlet property="episodeBtn" destination="lnc-6G-xQo" id="bXu-AR-B9b"/>
                 <outlet property="loadedView" destination="e9j-kC-Mb4" id="HX2-9F-y6A"/>
                 <outlet property="moreBtn" destination="b0q-yg-Nzb" id="Lfv-Dz-61g"/>
+                <outlet property="placeHolderView" destination="TKE-ir-nkp" id="OIv-xA-3CQ"/>
                 <outlet property="playBtn" destination="gy3-yX-I0y" id="GfV-k5-2OG"/>
                 <outlet property="progressSlider" destination="1x5-vd-QCE" id="mZG-kN-lLI"/>
                 <outlet property="rotateBtn" destination="NN6-pZ-z23" id="nWI-aW-RkQ"/>
@@ -213,14 +216,14 @@
                 <outlet property="topViewHeightConstraint" destination="y09-cN-gxI" id="QBJ-2Q-qqs"/>
                 <outlet property="topViewTopConstraint" destination="6ci-jm-1z3" id="O00-ih-WU1"/>
                 <outlet property="totalTimeLabel" destination="4iY-ZB-9GP" id="cra-CN-GD7"/>
-                <outlet property="waitingView" destination="KCx-c8-y0y" id="eC5-Dy-VOa"/>
             </connections>
             <point key="canvasLocation" x="-84.5" y="-27.5"/>
         </view>
     </objects>
     <resources>
-        <image name="Rotation.png" width="20" height="20"/>
-        <image name="Stop.png" width="17" height="17"/>
+        <image name="Rotation" width="20" height="20"/>
+        <image name="Stop" width="17" height="17"/>
+        <image name="default_bg_land" width="480" height="320"/>
         <image name="icmpv_more_light" width="20" height="20"/>
         <image name="icon_arrow_left_white" width="40" height="40"/>
         <image name="player_pause_iphone_fullscreen" width="80" height="80"/>

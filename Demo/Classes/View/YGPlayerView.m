@@ -12,6 +12,7 @@
 #import "YGVideoTool.h"
 #import "NSString+Time.h"
 #import "YGBrightnessAndVolumeView.h"
+#import "YGLoadingView.h"
 
 @interface YGPreviewView : UIView
 @property (nonatomic, strong) UIImageView *previewImageView;
@@ -123,7 +124,6 @@ static id _instance;
 
 
 @interface YGPlayerView () <UITableViewDelegate, UITableViewDataSource>
-
 @property (nonatomic, strong) NSMutableArray *playInfos;
 @property (nonatomic, strong) AVPlayer *player;
 @property (nonatomic, strong) AVPlayerItem *playerItem;
@@ -132,10 +132,11 @@ static id _instance;
 @property (nonatomic, strong) id timeObserver;
 @property (weak, nonatomic) IBOutlet UISlider *progressSlider;
 @property (weak, nonatomic) IBOutlet UIProgressView *loadedView;
+@property (weak, nonatomic) IBOutlet UIImageView *placeHolderView;
 @property (weak, nonatomic) IBOutlet UILabel *titleLabel;
 @property (weak, nonatomic) IBOutlet UIView *topView;
 @property (weak, nonatomic) IBOutlet UIView *bottomView;
-@property (nonatomic, weak) IBOutlet UIActivityIndicatorView *waitingView;
+@property (nonatomic, strong) YGLoadingView *waitingView;
 @property (weak, nonatomic) IBOutlet UIButton *centerPlayBtn;
 @property (weak, nonatomic) IBOutlet UIButton *playBtn;
 @property (weak, nonatomic) IBOutlet UIButton *rotateBtn;
@@ -169,6 +170,15 @@ static id _instance;
         _playInfos = [YGPlayInfo mj_objectArrayWithFilename:@"playList.plist"];
     }
     return _playInfos;
+}
+
+- (YGLoadingView *)waitingView
+{
+    if (_waitingView == nil) {
+        _waitingView = [[YGLoadingView alloc] init];
+        [self addSubview:_waitingView];
+    }
+    return _waitingView;
 }
 
 - (YGPreviewView *)previewView
@@ -236,6 +246,11 @@ static id _instance;
         make.width.mas_equalTo(180.f);
         make.height.mas_equalTo(180.f);
         make.center.equalTo(self);
+    }];
+    
+    [self.waitingView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.center.equalTo(self);
+        make.width.height.mas_equalTo(60.f);
     }];
     
     [self bringSubviewToFront:self.brightnessAndVolumeView];
@@ -413,6 +428,7 @@ static id _instance;
             [self.waitingView stopAnimating];
             self.totalTimeLabel.text = [NSString stringWithTime:totalTime];
             self.progressSlider.maximumValue = totalTime;
+            self.placeHolderView.hidden = YES;
             [self playOrPauseAction];
         } else if (status == AVPlayerStatusFailed) { // 播放错误 资源不存在 网络问题等等
             [self.waitingView stopAnimating];
@@ -691,7 +707,9 @@ static id _instance;
             [self showStatusBar];
         } completion:^(BOOL finished) {
             [self autoFadeOutControlPanel];
-            [self performSelector:@selector(hideStatusBar) withObject:nil afterDelay:10.f];
+            if (self.isLandscape) {
+                [self performSelector:@selector(hideStatusBar) withObject:nil afterDelay:10.f];
+            }
         }];
     }
 }

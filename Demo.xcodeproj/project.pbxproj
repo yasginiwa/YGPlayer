@@ -49,6 +49,7 @@
 		73F8ADE6204E5A1B00EC0378 /* NSObject+MJProperty.m in Sources */ = {isa = PBXBuildFile; fileRef = 73F8ADCF204E5A1B00EC0378 /* NSObject+MJProperty.m */; };
 		73F8ADE7204E5A1B00EC0378 /* NSString+MJExtension.m in Sources */ = {isa = PBXBuildFile; fileRef = 73F8ADD1204E5A1B00EC0378 /* NSString+MJExtension.m */; };
 		73F8ADEA204E5B4C00EC0378 /* YGVideoTool.m in Sources */ = {isa = PBXBuildFile; fileRef = 73F8ADE9204E5B4C00EC0378 /* YGVideoTool.m */; };
+		B60833E9206BC6B1009964A1 /* YGLoadingView.m in Sources */ = {isa = PBXBuildFile; fileRef = B60833E8206BC6B1009964A1 /* YGLoadingView.m */; };
 		B635DDE3204EBAE50094D6A2 /* NSString+Time.m in Sources */ = {isa = PBXBuildFile; fileRef = B635DDE2204EBAE50094D6A2 /* NSString+Time.m */; };
 /* End PBXBuildFile section */
 
@@ -130,6 +131,8 @@
 		73F8ADD1204E5A1B00EC0378 /* NSString+MJExtension.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSString+MJExtension.m"; sourceTree = "<group>"; };
 		73F8ADE8204E5B4C00EC0378 /* YGVideoTool.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YGVideoTool.h; sourceTree = "<group>"; };
 		73F8ADE9204E5B4C00EC0378 /* YGVideoTool.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = YGVideoTool.m; sourceTree = "<group>"; };
+		B60833E7206BC6B1009964A1 /* YGLoadingView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YGLoadingView.h; sourceTree = "<group>"; };
+		B60833E8206BC6B1009964A1 /* YGLoadingView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = YGLoadingView.m; sourceTree = "<group>"; };
 		B635DDE1204EBAE50094D6A2 /* NSString+Time.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSString+Time.h"; sourceTree = "<group>"; };
 		B635DDE2204EBAE50094D6A2 /* NSString+Time.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "NSString+Time.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -228,6 +231,8 @@
 				730C796D204D098C006028D2 /* YGPlayerView.xib */,
 				733F9C5320523BD00080CDEA /* YGBrightnessAndVolumeView.h */,
 				733F9C5420523BD00080CDEA /* YGBrightnessAndVolumeView.m */,
+				B60833E7206BC6B1009964A1 /* YGLoadingView.h */,
+				B60833E8206BC6B1009964A1 /* YGLoadingView.m */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -444,6 +449,7 @@
 				73F8ADE2204E5A1B00EC0378 /* MJPropertyType.m in Sources */,
 				73F8ADE6204E5A1B00EC0378 /* NSObject+MJProperty.m in Sources */,
 				73F8ADE4204E5A1B00EC0378 /* NSObject+MJCoding.m in Sources */,
+				B60833E9206BC6B1009964A1 /* YGLoadingView.m in Sources */,
 				73F8AD9E204E590D00EC0378 /* YGPlayInfo.m in Sources */,
 				73F8ADDB204E5A1B00EC0378 /* View+MASAdditions.m in Sources */,
 				73F8ADD3204E5A1B00EC0378 /* MASCompositeConstraint.m in Sources */,

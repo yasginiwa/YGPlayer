@@ -264,7 +264,6 @@ static id _instance;
     [self bringSubviewToFront:self.cover];
 }
 
-#pragma mark - 公共接口
 - (void)playWithPlayInfo:(YGPlayInfo *)playInfo
 {
     // 清空缩略图数组
@@ -272,7 +271,7 @@ static id _instance;
     
     // 重置player
     [self resetPlayer];
-
+    
     // 设置预览缩略图透明度为0
     self.previewView.alpha = .0f;
     
@@ -297,6 +296,15 @@ static id _instance;
     [self.waitingView startAnimating];
     
     [self.player replaceCurrentItemWithPlayerItem:self.playerItem];
+    
+    // 刚开始切换视频时 rate为0时显示视频海报(placeholder)
+    if (self.player.rate > 0) {
+        self.placeHolderView.hidden = YES;
+        [self.waitingView stopAnimating];
+    } else {
+        self.placeHolderView.hidden = NO;
+        [self.waitingView startAnimating];
+    }
     
     // 获取视频时长 网速慢可能会需要等待 卡住主线程
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
@@ -358,7 +366,6 @@ static id _instance;
     [self.playerItem addObserver:self forKeyPath:@"loadedTimeRanges" options:NSKeyValueObservingOptionNew context:NULL];
     [self.playerItem addObserver:self forKeyPath:@"playbackBufferEmpty" options:NSKeyValueObservingOptionNew context:NULL];
     [self.playerItem addObserver:self forKeyPath:@"playbackLikelyToKeepUp" options:NSKeyValueObservingOptionNew context:NULL];
-    [self.player addObserver:self forKeyPath:@"rate" options:NSKeyValueObservingOptionNew context:NULL];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(playFinished:) name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(changeStatusBarStyle:) name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
 }
@@ -370,7 +377,6 @@ static id _instance;
     [self.playerItem removeObserver:self forKeyPath:@"loadedTimeRanges"];
     [self.playerItem removeObserver:self forKeyPath:@"playbackBufferEmpty"];
     [self.playerItem removeObserver:self forKeyPath:@"playbackLikelyToKeepUp"];
-    [self.player removeObserver:self forKeyPath:@"rate"];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
@@ -428,16 +434,6 @@ static id _instance;
 // KVO检测播放器各种状态
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context
 {
-    if ([keyPath isEqualToString:@"rate"]) {
-        AVPlayer *player = (AVPlayer *)object;
-        if (player.rate > 0) {
-            self.placeHolderView.hidden = YES;
-            [self.waitingView stopAnimating];
-        } else {
-            self.placeHolderView.hidden = NO;
-            [self.waitingView startAnimating];
-        }
-    }
     AVPlayerItem *playItem = (AVPlayerItem *)object;
     NSTimeInterval totalTime = CMTimeGetSeconds(self.asset.duration);
     if ([keyPath isEqualToString:@"status"]) { // 检测播放器状态

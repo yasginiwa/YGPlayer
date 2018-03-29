@@ -5,7 +5,7 @@
 
 ## About
 
-A awesome player base on AVFoundation.Easier API to use and more less CPU loading.
+An awesome player base on AVFoundation.Easier API to use and more less CPU loading.
 
 
 =================================================

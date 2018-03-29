@@ -25,6 +25,7 @@
     return _activityIndicator;
 }
 
+// 模拟官方 重写setter方法 控件隐藏时暂停动画
 - (void)setHidesWhenStopped:(BOOL)hidesWhenStopped
 {
     _hidesWhenStopped = hidesWhenStopped;
@@ -37,6 +38,7 @@
     }
 }
 
+// 开始动画
 - (void)startAnimating
 {
     CABasicAnimation *anim = [CABasicAnimation animationWithKeyPath:@"transform.rotation.z"];
@@ -50,6 +52,7 @@
     self.activityIndicator.hidden = NO;
 }
 
+// 动画结束
 - (void)stopAnimating
 {
     [self.activityIndicator.layer removeAllAnimations];

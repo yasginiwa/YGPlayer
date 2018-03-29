@@ -92,8 +92,6 @@ static id _instance;
         [self addObserver];
         
         [self setupBrightnessGrid];
-        
-
     }
     return self;
 }
@@ -251,7 +249,7 @@ static id _instance;
     // 布局BrightnessEchoView
     [self.brightnessEchoView mas_remakeConstraints:^(MASConstraintMaker *make) {
         make.width.height.mas_equalTo(155.0);
-        make.center.equalTo(self);
+        make.center.equalTo([UIApplication sharedApplication].keyWindow);
     }];
     
     // 布局音量调节View

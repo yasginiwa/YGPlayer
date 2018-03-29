@@ -250,7 +250,7 @@ static id _instance;
     
     [self.waitingView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.center.equalTo(self);
-        make.width.height.mas_equalTo(60.f);
+        make.width.height.mas_equalTo(80.f);
     }];
     
     [self bringSubviewToFront:self.brightnessAndVolumeView];
@@ -290,6 +290,9 @@ static id _instance;
     
     // 设置播放器标题
     self.titleLabel.text = playInfo.title;
+    self.placeHolderView.image = [UIImage imageNamed:playInfo.placeholder];
+    
+    [self.waitingView startAnimating];
     
     [self.player replaceCurrentItemWithPlayerItem:self.playerItem];
     
@@ -335,6 +338,7 @@ static id _instance;
     self.playerItem = nil;
     self.player = nil;
     self.imageGenerator = nil;
+    self.placeHolderView.image = nil;
 }
 
 // 添加亮度和音量调节View
@@ -428,7 +432,6 @@ static id _instance;
             [self.waitingView stopAnimating];
             self.totalTimeLabel.text = [NSString stringWithTime:totalTime];
             self.progressSlider.maximumValue = totalTime;
-            self.placeHolderView.hidden = YES;
             [self playOrPauseAction];
         } else if (status == AVPlayerStatusFailed) { // 播放错误 资源不存在 网络问题等等
             [self.waitingView stopAnimating];
@@ -463,7 +466,8 @@ static id _instance;
         NSTimeInterval bufferingTime = CMTimeGetSeconds(timeRange.start) + CMTimeGetSeconds(timeRange.duration);
         NSTimeInterval totalTime = CMTimeGetSeconds(playItem.duration);
         [self.loadedView setProgress:bufferingTime / totalTime animated:YES];
-        if (bufferingTime > CMTimeGetSeconds(playItem.currentTime) + 2.f) {
+        if (bufferingTime > CMTimeGetSeconds(playItem.currentTime) + 3.f) {
+            self.placeHolderView.image = nil;
             [self.waitingView stopAnimating];
         } else {
             self.waitingView.hidden = NO;

@@ -15,5 +15,6 @@
 @property (nonatomic, copy) NSString *artist;
 // 曲目名称
 @property (nonatomic, copy) NSString *title;
-
+// 视频占位图
+@property (nonatomic, copy) NSString *placeholder;
 @end

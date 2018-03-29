@@ -14,7 +14,7 @@
         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="xVp-Po-57j" customClass="YGPlayerView">
             <rect key="frame" x="0.0" y="0.0" width="375" height="207"/>
             <subviews>
-                <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="default_bg_land" translatesAutoresizingMaskIntoConstraints="NO" id="TKE-ir-nkp" userLabel="初始化占位图">
+                <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="TKE-ir-nkp" userLabel="初始化占位图">
                     <rect key="frame" x="0.0" y="0.0" width="375" height="207"/>
                 </imageView>
                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="MkO-jz-WQ2" userLabel="顶部条">
@@ -223,7 +223,6 @@
     <resources>
         <image name="Rotation" width="20" height="20"/>
         <image name="Stop" width="17" height="17"/>
-        <image name="default_bg_land" width="480" height="320"/>
         <image name="icmpv_more_light" width="20" height="20"/>
         <image name="icon_arrow_left_white" width="40" height="40"/>
         <image name="player_pause_iphone_fullscreen" width="80" height="80"/>

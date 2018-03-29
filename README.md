@@ -4,11 +4,8 @@
 # YGPlayer
 
 ## About
-
 An awesome player base on AVFoundation.Easier API to use and more less CPU loading.
 
-
-=================================================
 ## Features
 * Based on iOS AVFoundation.
 * Support Left slider up and down alter brightness, right slider up and down alter volume.

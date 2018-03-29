@@ -58,4 +58,13 @@
     [self.activityIndicator.layer removeAllAnimations];
     self.activityIndicator.hidden = YES;
 }
+
+- (void)layoutSubviews
+{
+    [super layoutSubviews];
+    [self.activityIndicator mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.center.equalTo(self);
+        make.width.height.mas_equalTo(50);
+    }];
+}
 @end

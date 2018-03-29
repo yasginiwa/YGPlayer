@@ -176,6 +176,7 @@ static id _instance;
 {
     if (_waitingView == nil) {
         _waitingView = [[YGLoadingView alloc] init];
+        _waitingView.hidesWhenStopped = YES;
         [self addSubview:_waitingView];
     }
     return _waitingView;
@@ -290,6 +291,7 @@ static id _instance;
     
     // 设置播放器标题
     self.titleLabel.text = playInfo.title;
+    self.placeHolderView.hidden = NO;
     self.placeHolderView.image = [UIImage imageNamed:playInfo.placeholder];
     
     [self.waitingView startAnimating];
@@ -356,6 +358,7 @@ static id _instance;
     [self.playerItem addObserver:self forKeyPath:@"loadedTimeRanges" options:NSKeyValueObservingOptionNew context:NULL];
     [self.playerItem addObserver:self forKeyPath:@"playbackBufferEmpty" options:NSKeyValueObservingOptionNew context:NULL];
     [self.playerItem addObserver:self forKeyPath:@"playbackLikelyToKeepUp" options:NSKeyValueObservingOptionNew context:NULL];
+    [self.player addObserver:self forKeyPath:@"rate" options:NSKeyValueObservingOptionNew context:NULL];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(playFinished:) name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(changeStatusBarStyle:) name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
 }
@@ -367,6 +370,7 @@ static id _instance;
     [self.playerItem removeObserver:self forKeyPath:@"loadedTimeRanges"];
     [self.playerItem removeObserver:self forKeyPath:@"playbackBufferEmpty"];
     [self.playerItem removeObserver:self forKeyPath:@"playbackLikelyToKeepUp"];
+    [self.player removeObserver:self forKeyPath:@"rate"];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
@@ -424,12 +428,21 @@ static id _instance;
 // KVO检测播放器各种状态
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context
 {
+    if ([keyPath isEqualToString:@"rate"]) {
+        AVPlayer *player = (AVPlayer *)object;
+        if (player.rate > 0) {
+            self.placeHolderView.hidden = YES;
+            [self.waitingView stopAnimating];
+        } else {
+            self.placeHolderView.hidden = NO;
+            [self.waitingView startAnimating];
+        }
+    }
     AVPlayerItem *playItem = (AVPlayerItem *)object;
     NSTimeInterval totalTime = CMTimeGetSeconds(self.asset.duration);
     if ([keyPath isEqualToString:@"status"]) { // 检测播放器状态
         AVPlayerStatus status = [[change objectForKey:@"new"] intValue];
         if (status == AVPlayerStatusReadyToPlay) { // 达到能播放的状态
-            [self.waitingView stopAnimating];
             self.totalTimeLabel.text = [NSString stringWithTime:totalTime];
             self.progressSlider.maximumValue = totalTime;
             [self playOrPauseAction];
@@ -466,11 +479,11 @@ static id _instance;
         NSTimeInterval bufferingTime = CMTimeGetSeconds(timeRange.start) + CMTimeGetSeconds(timeRange.duration);
         NSTimeInterval totalTime = CMTimeGetSeconds(playItem.duration);
         [self.loadedView setProgress:bufferingTime / totalTime animated:YES];
-        if (bufferingTime > CMTimeGetSeconds(playItem.currentTime) + 3.f) {
+        if (bufferingTime > CMTimeGetSeconds(playItem.currentTime) + 5.f) {
+            self.placeHolderView.hidden = YES;
             self.placeHolderView.image = nil;
             [self.waitingView stopAnimating];
-        } else {
-            self.waitingView.hidden = NO;
+        } else if (self.player.rate == 0) {
             [self.waitingView startAnimating];
         }
     } else if ([keyPath isEqualToString:@"playbackBufferEmpty"]) {  // 缓存为空

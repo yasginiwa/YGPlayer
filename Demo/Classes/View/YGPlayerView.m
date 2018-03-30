@@ -20,6 +20,7 @@
 @property (nonatomic, strong) UIActivityIndicatorView *loadingView;
 @property (nonatomic, copy) NSString *title;
 @property (nonatomic, strong) UIImage *image;
+@property (nonatomic, strong) UIProgressView *progressView;
 + (instancetype)sharedPreviewView;
 @end
 
@@ -71,6 +72,17 @@ static id _instance;
     return _previewtitleLabel;
 }
 
+- (UIProgressView *)progressView
+{
+    if (_progressView == nil) {
+        _progressView = [[UIProgressView alloc] init];
+        _progressView.trackTintColor = [UIColor whiteColor];
+        _progressView.progressTintColor = [UIColor grayColor];
+        [self addSubview:_progressView];
+    }
+    return _progressView;
+}
+
 // 等待菊花
 - (UIActivityIndicatorView *)loadingView
 {
@@ -101,6 +113,18 @@ static id _instance;
     }
 }
 
+- (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection
+{
+    [super traitCollectionDidChange:previousTraitCollection];
+    if (self.traitCollection.verticalSizeClass == UIUserInterfaceSizeClassRegular) { // 转至竖屏
+        self.previewImageView.hidden = YES;
+        self.progressView.hidden = NO;
+    } else if (self.traitCollection.verticalSizeClass == UIUserInterfaceSizeClassCompact) { // 转至横屏
+        self.previewImageView.hidden = NO;
+        self.progressView.hidden = YES;
+    }
+}
+
 - (void)layoutSubviews
 {
     [super layoutSubviews];
@@ -118,6 +142,11 @@ static id _instance;
     [self.loadingView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.center.equalTo(self.previewImageView);
         make.width.height.mas_equalTo(20);
+    }];
+    
+    [self.progressView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.center.equalTo(self);
+        make.width.mas_equalTo(100);
     }];
 }
 @end
@@ -478,7 +507,6 @@ static id _instance;
         NSTimeInterval totalTime = CMTimeGetSeconds(playItem.duration);
         [self.loadedView setProgress:bufferingTime / totalTime animated:YES];
         if (bufferingTime > CMTimeGetSeconds(playItem.currentTime) + 5.f) {
-
             [self.waitingView stopAnimating];
         } else if (self.player.rate == 0) {
             [self.waitingView startAnimating];
@@ -564,6 +592,8 @@ static id _instance;
     self.previewView.alpha = 1.f;
     self.previewView.title = [NSString stringWithTime:sender.value];
     
+    NSTimeInterval totalTime = CMTimeGetSeconds(self.asset.duration);
+    [self.previewView.progressView setProgress:(sender.value / totalTime)  animated:YES];
     if (imageIndex < self.thumbImages.count) {
         self.previewView.image = self.thumbImages[imageIndex];
     } else {

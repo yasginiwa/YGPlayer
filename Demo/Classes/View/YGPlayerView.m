@@ -440,6 +440,8 @@ static id _instance;
         AVPlayerStatus status = [[change objectForKey:@"new"] intValue];
         if (status == AVPlayerStatusReadyToPlay) { // 达到能播放的状态
             self.totalTimeLabel.text = [NSString stringWithTime:totalTime];
+            self.placeHolderView.hidden = YES;
+            self.placeHolderView.image = nil;
             self.progressSlider.maximumValue = totalTime;
             [self playOrPauseAction];
         } else if (status == AVPlayerStatusFailed) { // 播放错误 资源不存在 网络问题等等
@@ -476,8 +478,7 @@ static id _instance;
         NSTimeInterval totalTime = CMTimeGetSeconds(playItem.duration);
         [self.loadedView setProgress:bufferingTime / totalTime animated:YES];
         if (bufferingTime > CMTimeGetSeconds(playItem.currentTime) + 5.f) {
-            self.placeHolderView.hidden = YES;
-            self.placeHolderView.image = nil;
+
             [self.waitingView stopAnimating];
         } else if (self.player.rate == 0) {
             [self.waitingView startAnimating];

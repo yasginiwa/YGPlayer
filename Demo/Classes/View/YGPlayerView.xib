@@ -14,9 +14,6 @@
         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="xVp-Po-57j" customClass="YGPlayerView">
             <rect key="frame" x="0.0" y="0.0" width="375" height="207"/>
             <subviews>
-                <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="TKE-ir-nkp" userLabel="初始化占位图">
-                    <rect key="frame" x="0.0" y="0.0" width="375" height="207"/>
-                </imageView>
                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="MkO-jz-WQ2" userLabel="顶部条">
                     <rect key="frame" x="0.0" y="0.0" width="375" height="40"/>
                     <subviews>
@@ -170,6 +167,9 @@
                         <constraint firstAttribute="trailing" secondItem="NN6-pZ-z23" secondAttribute="trailing" constant="10" id="xak-FI-VBa"/>
                     </constraints>
                 </view>
+                <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="TKE-ir-nkp" userLabel="初始化占位图">
+                    <rect key="frame" x="0.0" y="0.0" width="375" height="207"/>
+                </imageView>
                 <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="0Ab-OJ-Cwx">
                     <rect key="frame" x="327" y="119" width="40" height="40"/>
                     <constraints>
@@ -186,16 +186,16 @@
             <constraints>
                 <constraint firstItem="ZKs-UR-zag" firstAttribute="top" secondItem="0Ab-OJ-Cwx" secondAttribute="bottom" constant="8" id="45n-vJ-R2P"/>
                 <constraint firstItem="MkO-jz-WQ2" firstAttribute="top" secondItem="xVp-Po-57j" secondAttribute="top" id="6ci-jm-1z3"/>
-                <constraint firstItem="TKE-ir-nkp" firstAttribute="leading" secondItem="xVp-Po-57j" secondAttribute="leading" id="KXE-R1-wAm"/>
-                <constraint firstAttribute="trailing" secondItem="TKE-ir-nkp" secondAttribute="trailing" id="VT2-Gi-4ah"/>
+                <constraint firstItem="TKE-ir-nkp" firstAttribute="leading" secondItem="xVp-Po-57j" secondAttribute="leading" id="Bc0-MR-RJ1"/>
                 <constraint firstItem="ZKs-UR-zag" firstAttribute="leading" secondItem="xVp-Po-57j" secondAttribute="leading" id="WF4-gi-cQa"/>
                 <constraint firstAttribute="trailing" secondItem="0Ab-OJ-Cwx" secondAttribute="trailing" constant="8" id="bA3-VC-2xF"/>
                 <constraint firstAttribute="trailing" secondItem="MkO-jz-WQ2" secondAttribute="trailing" id="equ-zY-ydh"/>
-                <constraint firstAttribute="bottom" secondItem="TKE-ir-nkp" secondAttribute="bottom" id="gqv-bg-YWU"/>
+                <constraint firstAttribute="trailing" secondItem="TKE-ir-nkp" secondAttribute="trailing" id="g03-aU-o8u"/>
+                <constraint firstItem="TKE-ir-nkp" firstAttribute="top" secondItem="xVp-Po-57j" secondAttribute="top" id="hP0-xV-19O"/>
                 <constraint firstAttribute="bottom" secondItem="ZKs-UR-zag" secondAttribute="bottom" id="jh0-fk-mdl"/>
+                <constraint firstAttribute="bottom" secondItem="TKE-ir-nkp" secondAttribute="bottom" id="mGy-6n-WLa"/>
                 <constraint firstAttribute="trailing" secondItem="ZKs-UR-zag" secondAttribute="trailing" id="n6I-Mn-rtb"/>
                 <constraint firstItem="MkO-jz-WQ2" firstAttribute="leading" secondItem="xVp-Po-57j" secondAttribute="leading" id="wLu-2e-aEW"/>
-                <constraint firstItem="TKE-ir-nkp" firstAttribute="top" secondItem="xVp-Po-57j" secondAttribute="top" id="xOd-xD-voj"/>
             </constraints>
             <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
             <connections>

@@ -175,6 +175,7 @@ static id _instance;
 @property (weak, nonatomic) IBOutlet NSLayoutConstraint *moreBtn;
 @property (nonatomic, assign, getter=isLandscape) BOOL landscape;
 @property (nonatomic, assign, getter=controlPanelIsShowing) BOOL controlPanelShow;
+@property (nonatomic, assign, getter=isDragging) BOOL dragging;
 @property (nonatomic, weak) UIView *cover;
 @property (nonatomic, weak) UIButton *episodeCover;
 @property (nonatomic, weak) UIButton *replayBtn;
@@ -301,6 +302,9 @@ static id _instance;
     // 重置player
     [self resetPlayer];
     
+    // 切换隐藏控制面板
+    [self showOrHideControlPanel];
+    
     // 设置预览缩略图透明度为0
     self.previewView.alpha = .0f;
     
@@ -395,6 +399,7 @@ static id _instance;
     [self.playerItem addObserver:self forKeyPath:@"loadedTimeRanges" options:NSKeyValueObservingOptionNew context:NULL];
     [self.playerItem addObserver:self forKeyPath:@"playbackBufferEmpty" options:NSKeyValueObservingOptionNew context:NULL];
     [self.playerItem addObserver:self forKeyPath:@"playbackLikelyToKeepUp" options:NSKeyValueObservingOptionNew context:NULL];
+    [self.player addObserver:self forKeyPath:@"rate" options:NSKeyValueObservingOptionNew context:NULL];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(playFinished:) name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(changeStatusBarStyle:) name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
 }
@@ -406,6 +411,7 @@ static id _instance;
     [self.playerItem removeObserver:self forKeyPath:@"loadedTimeRanges"];
     [self.playerItem removeObserver:self forKeyPath:@"playbackBufferEmpty"];
     [self.playerItem removeObserver:self forKeyPath:@"playbackLikelyToKeepUp"];
+    [self.player removeObserver:self forKeyPath:@"rate"];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
@@ -506,10 +512,8 @@ static id _instance;
         NSTimeInterval bufferingTime = CMTimeGetSeconds(timeRange.start) + CMTimeGetSeconds(timeRange.duration);
         NSTimeInterval totalTime = CMTimeGetSeconds(playItem.duration);
         [self.loadedView setProgress:bufferingTime / totalTime animated:YES];
-        if (bufferingTime > CMTimeGetSeconds(playItem.currentTime) + 5.f) {
+        if (bufferingTime > CMTimeGetSeconds(playItem.currentTime) + 3.f) {
             [self.waitingView stopAnimating];
-        } else if (self.player.rate == 0) {
-            [self.waitingView startAnimating];
         }
     } else if ([keyPath isEqualToString:@"playbackBufferEmpty"]) {  // 缓存为空
         if (playItem.playbackBufferEmpty) {
@@ -526,6 +530,11 @@ static id _instance;
                 self.previewView.image = self.thumbImages[imageIndex];
             }
         });
+    } else if ([keyPath isEqualToString:@"rate"]) {
+        AVPlayer *player = (AVPlayer *)object;
+        if (player.reasonForWaitingToPlay == AVPlayerWaitingWhileEvaluatingBufferingRateReason) {
+            [self.waitingView startAnimating];
+        }
     }
 }
 
@@ -582,8 +591,10 @@ static id _instance;
 
 // 拖拽进度条
 - (IBAction)dragProgressAction:(UISlider *)sender {
+    self.dragging = YES;
+    
     // 取消之前的隐藏播放控制面板的操作
-    [NSObject cancelPreviousPerformRequestsWithTarget:self];
+    [self cancelHideControllPanelAndStatusBar];
     
     [self.player pause];
     [self removeTimeObserver];
@@ -604,6 +615,7 @@ static id _instance;
 // 进度条拖拽结束
 - (void)progressDragEnd:(UISlider *)sender
 {
+    self.dragging = NO;
     [UIView animateWithDuration:.5f animations:^{
         self.previewView.alpha = .0f;
     }];
@@ -613,6 +625,7 @@ static id _instance;
     // 延迟10.0秒后隐藏播放控制面板
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(10.f * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [self hideControlPanel];
+        if (!self.isLandscape) return;
         [self hideStatusBar];
     });
 }
@@ -628,6 +641,7 @@ static id _instance;
     thumbImageRef = [self.imageGenerator copyCGImageAtTime:CMTimeMake(time, 1) actualTime:NULL error:&thumbImageGenerationError];
 //    NSLog(@"%@", thumbImageGenerationError);
     UIImage *thumbImage = [[UIImage alloc] initWithCGImage:thumbImageRef];
+    // 用完要释放 不然会存在内存泄漏
     CGImageRelease(thumbImageRef);
     if (thumbImageRef) {
         return thumbImage;
@@ -742,6 +756,7 @@ static id _instance;
 - (void)showOrHideControlPanel
 {
     if (self.controlPanelIsShowing) {
+        if (self.isDragging) return;
         [self hideControlPanel];
         if (self.isLandscape) {
             [self hideStatusBar];
@@ -753,9 +768,8 @@ static id _instance;
             [self showStatusBar];
         } completion:^(BOOL finished) {
             [self autoFadeOutControlPanel];
-            if (self.isLandscape) {
-                [self performSelector:@selector(hideStatusBar) withObject:nil afterDelay:10.f];
-            }
+            if (!self.isLandscape) return;
+            [self performSelector:@selector(hideStatusBar) withObject:nil afterDelay:10.f];
         }];
     }
 }
@@ -784,6 +798,13 @@ static id _instance;
 - (void)autoFadeOutControlPanel {
     [NSObject cancelPreviousPerformRequestsWithTarget:self];
     [self performSelector:@selector(hideControlPanel) withObject:nil afterDelay:10.f];
+}
+
+// 取消隐藏控制面板和状态栏
+- (void)cancelHideControllPanelAndStatusBar
+{
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(showOrHideControlPanel) object:nil];
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(hideStatusBar) object:nil];
 }
 
 // 根据方向改变状态栏的风格

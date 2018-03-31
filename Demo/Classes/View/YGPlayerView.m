@@ -77,7 +77,7 @@ static id _instance;
     if (_progressView == nil) {
         _progressView = [[UIProgressView alloc] init];
         _progressView.trackTintColor = [UIColor whiteColor];
-        _progressView.progressTintColor = [UIColor grayColor];
+        _progressView.progressTintColor = [UIColor redColor];
         [self addSubview:_progressView];
     }
     return _progressView;
@@ -627,8 +627,10 @@ static id _instance;
     NSError *thumbImageGenerationError = nil;
     thumbImageRef = [self.imageGenerator copyCGImageAtTime:CMTimeMake(time, 1) actualTime:NULL error:&thumbImageGenerationError];
 //    NSLog(@"%@", thumbImageGenerationError);
+    UIImage *thumbImage = [[UIImage alloc] initWithCGImage:thumbImageRef];
+    CGImageRelease(thumbImageRef);
     if (thumbImageRef) {
-        return [[UIImage alloc] initWithCGImage:thumbImageRef];
+        return thumbImage;
     } else {
         return nil;
     }

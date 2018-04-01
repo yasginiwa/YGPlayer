@@ -803,7 +803,7 @@ static id _instance;
 // 取消隐藏控制面板和状态栏
 - (void)cancelHideControllPanelAndStatusBar
 {
-    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(showOrHideControlPanel) object:nil];
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(hideControlPanel) object:nil];
     [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(hideStatusBar) object:nil];
 }
 

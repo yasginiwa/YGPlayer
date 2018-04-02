@@ -387,6 +387,12 @@ static id _instance;
 - (void)setupBrightnessAndVolumeView
 {
     YGBrightnessAndVolumeView *brightnessAndVolumeView = [YGBrightnessAndVolumeView sharedBrightnessAndAudioView];
+    brightnessAndVolumeView.progressChangeHandle = ^(CGFloat delta) {
+        [self gestureDragProgress:delta];
+    };
+    brightnessAndVolumeView.progressChangeEnd = ^{
+        [self progressDragEnd:self.progressSlider];
+    };
     [self addSubview:brightnessAndVolumeView];
     self.brightnessAndVolumeView = brightnessAndVolumeView;
 }
@@ -511,7 +517,7 @@ static id _instance;
         NSTimeInterval bufferingTime = CMTimeGetSeconds(timeRange.start) + CMTimeGetSeconds(timeRange.duration);
         NSTimeInterval totalTime = CMTimeGetSeconds(playItem.duration);
         [self.loadedView setProgress:bufferingTime / totalTime animated:YES];
-        if (bufferingTime > CMTimeGetSeconds(playItem.currentTime) + 3.f) {
+        if (bufferingTime > CMTimeGetSeconds(playItem.currentTime) + 5.f) {
             [self.waitingView stopAnimating];
         }
     } else if ([keyPath isEqualToString:@"playbackBufferEmpty"]) {  // 缓存为空
@@ -608,6 +614,15 @@ static id _instance;
     } else {
         self.previewView.image = nil;
     }
+}
+
+// 横向手势拖拽时显示进度条或者缩略图
+- (void)gestureDragProgress:(CGFloat)delta
+{
+    NSTimeInterval currentTime = CMTimeGetSeconds(self.player.currentTime);
+    currentTime = currentTime + delta;
+    self.progressSlider.value = currentTime;
+    [self dragProgressAction:self.progressSlider];
 }
 
 // 进度条拖拽结束

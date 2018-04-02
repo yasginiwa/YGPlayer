@@ -9,5 +9,7 @@
 #import <UIKit/UIKit.h>
 
 @interface YGBrightnessAndVolumeView : UIView
+@property (nonatomic, copy) void(^progressChangeHandle)(CGFloat);
+@property (nonatomic, copy) void(^progressChangeEnd)(void);
 + (instancetype)sharedBrightnessAndAudioView;
 @end

@@ -11,6 +11,7 @@
 #import <AVFoundation/AVFoundation.h>
 
 #define YGGridCount 16
+#define YGProgressScale 7
 
 @interface YGBrightnessEchoView : UIView
 @property (nonatomic, strong) NSMutableArray *gridArray;
@@ -175,7 +176,11 @@ static id _instance;
 @end
 
 
-
+// 移动的方向 枚举类型
+typedef enum {
+    YGMoveTypePortrait,
+    YGMoveTypeLandscape,
+} YGMoveType;
 
 @interface YGBrightnessAndVolumeView ()
 @property (nonatomic, weak) UIView *brightnessView;
@@ -183,7 +188,7 @@ static id _instance;
 @property (nonatomic, assign) CGFloat currentBrightnessValue;
 @property (nonatomic, assign) CGFloat currentVolumeValue;
 @property (nonatomic, weak) UIView *brightnessEchoView;
-
+@property (nonatomic, assign) YGMoveType *moveType;
 @end
 
 @implementation YGBrightnessAndVolumeView
@@ -218,7 +223,7 @@ static id _instance;
         brightnessView.backgroundColor = [UIColor clearColor];
         self.brightnessView = brightnessView;
         [self addSubview:brightnessView];
-        [self addBrightnessPanGesture];
+        [self addPanGesture];
 
         // 初始化右边的音量调节的View
         UIView *volumeView = [[UIView alloc] init];
@@ -259,16 +264,43 @@ static id _instance;
     }];
 }
 
-- (void)addBrightnessPanGesture
+- (void)addPanGesture
 {
-    UIPanGestureRecognizer *brightnessPan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(brightnessChange:)];
-    [self.brightnessView addGestureRecognizer:brightnessPan];
+    UIPanGestureRecognizer *panGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(decideWhatToChange:)];
+    [self.brightnessView addGestureRecognizer:panGesture];
 }
 
 - (void)addVolumePanGesture
 {
-    UIPanGestureRecognizer *volumePan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(volumeChange:)];
+    UIPanGestureRecognizer *volumePan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(decideWhatToChange:)];
     [self.volumeView addGestureRecognizer:volumePan];
+}
+
+- (YGMoveType)judgeMoveType:(UIPanGestureRecognizer *)sender
+{
+    CGPoint pointV = [sender velocityInView:self];
+    CGFloat deltaVX = fabs(pointV.x);
+    CGFloat deltaVY = fabs(pointV.y);
+    if (deltaVX > deltaVY) return YGMoveTypeLandscape;
+    return YGMoveTypePortrait;
+}
+
+- (void)decideWhatToChange:(UIPanGestureRecognizer *)sender
+{
+    CGPoint p = [sender locationInView:self.brightnessView];
+    if ([self judgeMoveType:sender] == YGMoveTypePortrait) {
+        if (CGRectContainsPoint(self.brightnessView.frame, p)) {
+            [self brightnessChange:sender];
+        } else if (CGRectContainsPoint(self.volumeView.frame, p)) {
+            [self volumeChange:sender];
+        }
+    } else if ([self judgeMoveType:sender] == YGMoveTypeLandscape) {
+        
+        [self progressChange:sender handle:self.progressChangeHandle];
+    }
+    if (sender.state == UIGestureRecognizerStateEnded) {
+        self.progressChangeEnd();
+    }
 }
 
 - (void)brightnessChange:(UIPanGestureRecognizer *)sender
@@ -283,6 +315,13 @@ static id _instance;
     } completion:^(BOOL finished) {
         [self autoFadeoutBrightnessEchoView];
     }];
+}
+
+- (void)progressChange:(UIPanGestureRecognizer *)sender handle:(void(^)(CGFloat))handle
+{
+    CGPoint panPoint = [sender translationInView:self.brightnessView];
+    CGFloat delta = panPoint.x / YGProgressScale;
+    handle(delta);
 }
 
 - (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event

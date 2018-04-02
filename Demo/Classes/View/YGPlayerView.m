@@ -175,7 +175,6 @@ static id _instance;
 @property (weak, nonatomic) IBOutlet NSLayoutConstraint *moreBtn;
 @property (nonatomic, assign, getter=isLandscape) BOOL landscape;
 @property (nonatomic, assign, getter=controlPanelIsShowing) BOOL controlPanelShow;
-@property (nonatomic, assign, getter=isDragging) BOOL dragging;
 @property (nonatomic, weak) UIView *cover;
 @property (nonatomic, weak) UIButton *episodeCover;
 @property (nonatomic, weak) UIButton *replayBtn;
@@ -184,7 +183,7 @@ static id _instance;
 @property (weak, nonatomic) IBOutlet NSLayoutConstraint *topViewHeightConstraint;
 @property (weak, nonatomic) IBOutlet NSLayoutConstraint *rotateBtnLeadingConstraint;
 @property (nonatomic, weak) YGBrightnessAndVolumeView *brightnessAndVolumeView;
-@property (nonatomic, strong) UITapGestureRecognizer *tapGuesture;
+@property (nonatomic, strong) UITapGestureRecognizer *tapGesture;
 @property (nonatomic, strong) UIPanGestureRecognizer *panGuesture;
 @property (nonatomic, strong) YGPreviewView *previewView;
 @property (nonatomic, strong) NSMutableArray *thumbImages;
@@ -243,7 +242,7 @@ static id _instance;
     if (self = [super initWithCoder:aDecoder]) {
         self.progressSlider.value = 0.f;
         self.loadedView.progress = 0.f;
-        [self addGuesture];
+        [self addGesture];
         [self showOrHideControlPanel];
         [self setupBrightnessAndVolumeView];
     }
@@ -453,7 +452,7 @@ static id _instance;
     [replayBtn addTarget:self action:@selector(replay) forControlEvents:UIControlEventTouchUpInside];
     self.replayBtn = replayBtn;
     self.playerItem = [note object];
-    [self removeGestureRecognizer:self.tapGuesture];
+    [self removeGestureRecognizer:self.tapGesture];
 }
 
 // 播放完后重播
@@ -463,7 +462,7 @@ static id _instance;
     [self hideControlPanel];
     [self.playerItem seekToTime:kCMTimeZero];
     [self.player play];
-    [self addGuesture];
+    [self addGesture];
 }
 
 // KVO检测播放器各种状态
@@ -534,6 +533,7 @@ static id _instance;
         AVPlayer *player = (AVPlayer *)object;
         if (player.reasonForWaitingToPlay == AVPlayerWaitingWhileEvaluatingBufferingRateReason) {
             [self.waitingView startAnimating];
+            [self showOrHideControlPanel];
         }
     }
 }
@@ -591,8 +591,6 @@ static id _instance;
 
 // 拖拽进度条
 - (IBAction)dragProgressAction:(UISlider *)sender {
-    self.dragging = YES;
-    
     // 取消之前的隐藏播放控制面板的操作
     [self cancelHideControllPanelAndStatusBar];
     
@@ -615,7 +613,6 @@ static id _instance;
 // 进度条拖拽结束
 - (void)progressDragEnd:(UISlider *)sender
 {
-    self.dragging = NO;
     [UIView animateWithDuration:.5f animations:^{
         self.previewView.alpha = .0f;
     }];
@@ -623,11 +620,7 @@ static id _instance;
     [self addTimerObserver];
     [self.player play];
     // 延迟10.0秒后隐藏播放控制面板
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(10.f * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        [self hideControlPanel];
-        if (!self.isLandscape) return;
-        [self hideStatusBar];
-    });
+    [self performSelector:@selector(autoFadeOutControlPanelAndStatusBar) withObject:nil afterDelay:10.f];
 }
 
 // 获取AVURLAsset的任意一帧图片
@@ -671,14 +664,14 @@ static id _instance;
     [self.episodeCover addSubview:episodeTableView];
     episodeTableView.frame = CGRectMake(0, 0, scrnW * 0.7, scrnH - 100);
     episodeTableView.center = self.center;
-    [self removeGestureRecognizer:self.tapGuesture];
+    [self removeGestureRecognizer:self.tapGesture];
 }
 
 // 移除选集遮盖
 - (void)removeEpisodeCover:(UIButton *)episodeCover
 {
     [episodeCover removeFromSuperview];
-    [self addGuesture];
+    [self addGesture];
 }
 
 #pragma mark - UITableView DataSource 实现数据源方法
@@ -744,19 +737,18 @@ static id _instance;
 }
 
 // 添加手势识别器
-- (void)addGuesture
+- (void)addGesture
 {
     // 添加Tap手势
-    UITapGestureRecognizer *tapGuesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(showOrHideControlPanel)];
-    [self addGestureRecognizer:tapGuesture];
-    self.tapGuesture = tapGuesture;
+    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(showOrHideControlPanel)];
+    [self addGestureRecognizer:tapGesture];
+    self.tapGesture = tapGesture;
 }
 
 // 显示或隐藏播放器控制面板
 - (void)showOrHideControlPanel
 {
     if (self.controlPanelIsShowing) {
-        if (self.isDragging) return;
         [self hideControlPanel];
         if (self.isLandscape) {
             [self hideStatusBar];
@@ -766,11 +758,8 @@ static id _instance;
         [UIView animateWithDuration:.5f animations:^{
             [self showControlPanel];
             [self showStatusBar];
-        } completion:^(BOOL finished) {
-            [self autoFadeOutControlPanel];
-            if (!self.isLandscape) return;
-            [self performSelector:@selector(hideStatusBar) withObject:nil afterDelay:10.f];
         }];
+        [self performSelector:@selector(autoFadeOutControlPanelAndStatusBar) withObject:nil afterDelay:10.f];
     }
 }
 
@@ -795,27 +784,18 @@ static id _instance;
 }
 
 // 自动淡出播放控制面板
-- (void)autoFadeOutControlPanel {
+- (void)autoFadeOutControlPanelAndStatusBar
+{
     [NSObject cancelPreviousPerformRequestsWithTarget:self];
-    [self performSelector:@selector(hideControlPanel) withObject:nil afterDelay:10.f];
+    [self hideControlPanel];
+    if (!self.isLandscape) return;
+    [self hideStatusBar];
 }
 
 // 取消隐藏控制面板和状态栏
 - (void)cancelHideControllPanelAndStatusBar
 {
-    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(hideControlPanel) object:nil];
-    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(hideStatusBar) object:nil];
-}
-
-// 根据方向改变状态栏的风格
-- (void)changeStatusBarStyle:(NSNotification *)note
-{
-    UIInterfaceOrientation statusOrientation = [note.userInfo[@"UIApplicationStatusBarOrientationUserInfoKey"] integerValue];
-    if (statusOrientation == UIInterfaceOrientationPortrait) {
-        [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleLightContent;
-    } else {
-        [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleDefault;
-    }
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(autoFadeOutControlPanelAndStatusBar) object:nil];
 }
 
 // 显示状态栏
@@ -830,6 +810,17 @@ static id _instance;
 {
     UIView *statusBar = [[[UIApplication sharedApplication] valueForKey:@"statusBarWindow"] valueForKey:@"statusBar"];
     statusBar.alpha = .0f;
+}
+
+// 根据方向改变状态栏的风格
+- (void)changeStatusBarStyle:(NSNotification *)note
+{
+    UIInterfaceOrientation statusOrientation = [note.userInfo[@"UIApplicationStatusBarOrientationUserInfoKey"] integerValue];
+    if (statusOrientation == UIInterfaceOrientationPortrait) {
+        [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleLightContent;
+    } else {
+        [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleDefault;
+    }
 }
 
 - (void)dealloc

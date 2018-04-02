@@ -278,12 +278,17 @@ static id _instance;
     self.currentBrightnessValue = [UIScreen mainScreen].brightness;
     if (self.currentVolumeValue < 0) self.currentVolumeValue = 0;
     [[UIScreen mainScreen] setBrightness:self.currentBrightnessValue + delta];
-
     [UIView animateWithDuration:.2f animations:^{
         [self showBrightnessEchoView];
     } completion:^(BOOL finished) {
         [self autoFadeoutBrightnessEchoView];
     }];
+}
+
+- (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
+{
+    [super touchesMoved:touches withEvent:event];
+    
 }
 
 - (void)showBrightnessEchoView

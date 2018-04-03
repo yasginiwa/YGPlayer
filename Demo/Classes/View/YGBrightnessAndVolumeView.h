@@ -10,6 +10,7 @@
 
 @interface YGBrightnessAndVolumeView : UIView
 @property (nonatomic, copy) void(^progressChangeHandle)(CGFloat);
-@property (nonatomic, copy) void(^progressChangeEnd)(void);
+@property (nonatomic, copy) void(^progressLandscapeEnd)(void);
+@property (nonatomic, copy) void(^progressPortraitEnd)(void);
 + (instancetype)sharedBrightnessAndAudioView;
 @end

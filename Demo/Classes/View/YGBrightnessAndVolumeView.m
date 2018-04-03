@@ -180,6 +180,7 @@ static id _instance;
 typedef enum {
     YGMoveTypePortrait,
     YGMoveTypeLandscape,
+    YGMoveTypeOther,
 } YGMoveType;
 
 @interface YGBrightnessAndVolumeView ()
@@ -223,14 +224,15 @@ static id _instance;
         brightnessView.backgroundColor = [UIColor clearColor];
         self.brightnessView = brightnessView;
         [self addSubview:brightnessView];
-        [self addPanGesture];
 
         // 初始化右边的音量调节的View
         UIView *volumeView = [[UIView alloc] init];
         volumeView.backgroundColor = [UIColor clearColor];
         [self addSubview:volumeView];
         self.volumeView = volumeView;
-        [self addVolumePanGesture];
+        
+        // 添加手势识别器
+        [self addPanGesture];
         
         // 初始化音量回显图标
         YGBrightnessEchoView *brightnessEchoView = [YGBrightnessEchoView sharedBrightnessEchoView];
@@ -267,43 +269,48 @@ static id _instance;
 - (void)addPanGesture
 {
     UIPanGestureRecognizer *panGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(decideWhatToChange:)];
-    [self.brightnessView addGestureRecognizer:panGesture];
-}
-
-- (void)addVolumePanGesture
-{
-    UIPanGestureRecognizer *volumePan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(decideWhatToChange:)];
-    [self.volumeView addGestureRecognizer:volumePan];
+    [self addGestureRecognizer:panGesture];
 }
 
 - (YGMoveType)judgeMoveType:(UIPanGestureRecognizer *)sender
 {
     CGPoint pointV = [sender velocityInView:self];
+    CGPoint pointT = [sender translationInView:self];
     CGFloat deltaVX = fabs(pointV.x);
     CGFloat deltaVY = fabs(pointV.y);
-    if (deltaVX < deltaVY) return YGMoveTypePortrait;
-    return YGMoveTypeLandscape;
+    CGFloat deltaTX = fabs(pointT.x);
+    CGFloat deltaTY = fabs(pointT.y);
+    NSLog(@"%f-%f", deltaVX, deltaVY);
+    if (deltaVX > deltaVY && deltaTX > 10) {
+        return YGMoveTypeLandscape;
+    } else if (deltaVX < deltaVY) {
+        return YGMoveTypePortrait;
+    } else {
+        return YGMoveTypeOther;
+    }
 }
 
 - (void)decideWhatToChange:(UIPanGestureRecognizer *)sender
 {
-    CGPoint p = [sender locationInView:self.brightnessView];
-    CGPoint pointT = [sender translationInView:self];
+    CGPoint p = [sender locationInView:self];
     if ([self judgeMoveType:sender] == YGMoveTypePortrait) {
-        [sender setTranslation:CGPointMake(.0f, pointT.y) inView:self.brightnessView];
-        [sender setTranslation:CGPointMake(.0f, pointT.y) inView:self.volumeView];
         if (CGRectContainsPoint(self.brightnessView.frame, p)) {
             [self brightnessChange:sender];
         } else if (CGRectContainsPoint(self.volumeView.frame, p)) {
             [self volumeChange:sender];
         }
     } else if ([self judgeMoveType:sender] == YGMoveTypeLandscape) {
-        [sender setTranslation:CGPointMake(pointT.x, .0f) inView:self.brightnessView];
-        [sender setTranslation:CGPointMake(pointT.x, .0f) inView:self.volumeView];
         [self progressChange:sender handle:self.progressChangeHandle];
+    } else if ([self judgeMoveType:sender] == YGMoveTypeOther) {
+        
     }
     if (sender.state == UIGestureRecognizerStateEnded) {
-        self.progressChangeEnd();
+        if ([self judgeMoveType:sender] == YGMoveTypePortrait) {
+            self.progressPortraitEnd();
+        }
+        if ([self judgeMoveType:sender] == YGMoveTypeLandscape) {
+            self.progressLandscapeEnd();
+        }
     }
 }
 
@@ -325,7 +332,6 @@ static id _instance;
 {
     CGPoint panPoint = [sender translationInView:self.brightnessView];
     CGFloat delta = panPoint.x / YGProgressScale;
-    panPoint.y = .0f;
     handle(delta);
 }
 

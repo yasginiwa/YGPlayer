@@ -390,7 +390,10 @@ static id _instance;
     brightnessAndVolumeView.progressChangeHandle = ^(CGFloat delta) {
         [self gestureDragProgress:delta];
     };
-    brightnessAndVolumeView.progressChangeEnd = ^{
+    brightnessAndVolumeView.progressPortraitEnd = ^{
+        [self gestureDragEnd];
+    };
+    brightnessAndVolumeView.progressLandscapeEnd = ^{
         [self progressDragEnd:self.progressSlider];
     };
     [self addSubview:brightnessAndVolumeView];
@@ -636,6 +639,14 @@ static id _instance;
     [self.player play];
     // 延迟10.0秒后隐藏播放控制面板
     [self performSelector:@selector(autoFadeOutControlPanelAndStatusBar) withObject:nil afterDelay:10.f];
+}
+
+// // 横向手势拖拽手势结束
+- (void)gestureDragEnd
+{
+    [UIView animateWithDuration:.5f animations:^{
+        self.previewView.alpha = .0f;
+    }];
 }
 
 // 获取AVURLAsset的任意一帧图片

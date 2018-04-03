@@ -178,9 +178,9 @@ static id _instance;
 
 // 移动的方向 枚举类型
 typedef enum {
-    YGMoveTypePortrait,
-    YGMoveTypeLandscape,
-    YGMoveTypeOther,
+    YGMoveTypePortrait,  // 竖向滑动手势
+    YGMoveTypeLandscape, // 横向滑动手势
+    YGMoveTypeUnknow, // 未知手势
 } YGMoveType;
 
 @interface YGBrightnessAndVolumeView ()
@@ -272,24 +272,19 @@ static id _instance;
     [self addGestureRecognizer:panGesture];
 }
 
+// 通过pan拖拽时的移动位置的绝对值判断手势类型 |pointT.x| > |pointT.y| 横向手势  |pointT.y| < |pointT.x| 竖向手势
 - (YGMoveType)judgeMoveType:(UIPanGestureRecognizer *)sender
 {
-    CGPoint pointV = [sender velocityInView:self];
     CGPoint pointT = [sender translationInView:self];
-    CGFloat deltaVX = fabs(pointV.x);
-    CGFloat deltaVY = fabs(pointV.y);
     CGFloat deltaTX = fabs(pointT.x);
     CGFloat deltaTY = fabs(pointT.y);
-    NSLog(@"%f-%f", deltaVX, deltaVY);
-    if (deltaVX > deltaVY && deltaTX > 10) {
+    if (MAX(deltaTX, deltaTY) < 10) return YGMoveTypeUnknow;
+    if (deltaTX > deltaTY) {
         return YGMoveTypeLandscape;
-    } else if (deltaVX < deltaVY) {
-        return YGMoveTypePortrait;
-    } else {
-        return YGMoveTypeOther;
-    }
+    } else return YGMoveTypePortrait;
 }
 
+// 通过相应的手势执行相应的操作
 - (void)decideWhatToChange:(UIPanGestureRecognizer *)sender
 {
     CGPoint p = [sender locationInView:self];
@@ -301,9 +296,8 @@ static id _instance;
         }
     } else if ([self judgeMoveType:sender] == YGMoveTypeLandscape) {
         [self progressChange:sender handle:self.progressChangeHandle];
-    } else if ([self judgeMoveType:sender] == YGMoveTypeOther) {
-        
-    }
+    } else if ([self judgeMoveType:sender] == YGMoveTypeUnknow) return;
+
     if (sender.state == UIGestureRecognizerStateEnded) {
         if ([self judgeMoveType:sender] == YGMoveTypePortrait) {
             self.progressPortraitEnd();
@@ -333,12 +327,6 @@ static id _instance;
     CGPoint panPoint = [sender translationInView:self.brightnessView];
     CGFloat delta = panPoint.x / YGProgressScale;
     handle(delta);
-}
-
-- (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
-{
-    [super touchesMoved:touches withEvent:event];
-    
 }
 
 - (void)showBrightnessEchoView

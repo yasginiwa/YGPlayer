@@ -11,7 +11,7 @@
 #import <AVFoundation/AVFoundation.h>
 
 #define YGGridCount 16
-#define YGProgressScale 7
+#define YGProgressScale 8
 
 @interface YGBrightnessEchoView : UIView
 @property (nonatomic, strong) NSMutableArray *gridArray;
@@ -281,21 +281,25 @@ static id _instance;
     CGPoint pointV = [sender velocityInView:self];
     CGFloat deltaVX = fabs(pointV.x);
     CGFloat deltaVY = fabs(pointV.y);
-    if (deltaVX > deltaVY) return YGMoveTypeLandscape;
-    return YGMoveTypePortrait;
+    if (deltaVX < deltaVY) return YGMoveTypePortrait;
+    return YGMoveTypeLandscape;
 }
 
 - (void)decideWhatToChange:(UIPanGestureRecognizer *)sender
 {
     CGPoint p = [sender locationInView:self.brightnessView];
+    CGPoint pointT = [sender translationInView:self];
     if ([self judgeMoveType:sender] == YGMoveTypePortrait) {
+        [sender setTranslation:CGPointMake(.0f, pointT.y) inView:self.brightnessView];
+        [sender setTranslation:CGPointMake(.0f, pointT.y) inView:self.volumeView];
         if (CGRectContainsPoint(self.brightnessView.frame, p)) {
             [self brightnessChange:sender];
         } else if (CGRectContainsPoint(self.volumeView.frame, p)) {
             [self volumeChange:sender];
         }
     } else if ([self judgeMoveType:sender] == YGMoveTypeLandscape) {
-        
+        [sender setTranslation:CGPointMake(pointT.x, .0f) inView:self.brightnessView];
+        [sender setTranslation:CGPointMake(pointT.x, .0f) inView:self.volumeView];
         [self progressChange:sender handle:self.progressChangeHandle];
     }
     if (sender.state == UIGestureRecognizerStateEnded) {
@@ -321,6 +325,7 @@ static id _instance;
 {
     CGPoint panPoint = [sender translationInView:self.brightnessView];
     CGFloat delta = panPoint.x / YGProgressScale;
+    panPoint.y = .0f;
     handle(delta);
 }
 

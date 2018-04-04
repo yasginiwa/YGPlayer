@@ -545,6 +545,11 @@ static id _instance;
             [self.waitingView startAnimating];
             [self showOrHideControlPanel];
         }
+        if (player.rate == .0f) {
+            [self.playBtn setImage:[UIImage imageNamed:@"Play"] forState:UIControlStateNormal];
+        } else {
+            [self.playBtn setImage:[UIImage imageNamed:@"Stop"] forState:UIControlStateNormal];
+        }
     }
 }
 

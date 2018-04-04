@@ -547,8 +547,10 @@ static id _instance;
         }
         if (player.rate == .0f) {
             [self.playBtn setImage:[UIImage imageNamed:@"Play"] forState:UIControlStateNormal];
+            [self.centerPlayBtn setImage:[UIImage imageNamed:@"player_start_iphone_fullscreen"] forState:UIControlStateNormal];
         } else {
             [self.playBtn setImage:[UIImage imageNamed:@"Stop"] forState:UIControlStateNormal];
+            [self.centerPlayBtn setImage:[UIImage imageNamed:@"player_pause_iphone_fullscreen"] forState:UIControlStateNormal];
         }
     }
 }

@@ -178,9 +178,9 @@ static id _instance;
 
 // 移动的方向 枚举类型
 typedef enum {
-    YGMoveTypePortrait,  // 竖向滑动手势
-    YGMoveTypeLandscape, // 横向滑动手势
-    YGMoveTypeUnknow, // 未知手势
+    kYGMoveTypePortrait,  // 竖向滑动手势
+    kYGMoveTypeLandscape, // 横向滑动手势
+    kYGMoveTypeUnknow, // 未知手势
 } YGMoveType;
 
 @interface YGBrightnessAndVolumeView ()
@@ -189,7 +189,6 @@ typedef enum {
 @property (nonatomic, assign) CGFloat currentBrightnessValue;
 @property (nonatomic, assign) CGFloat currentVolumeValue;
 @property (nonatomic, weak) UIView *brightnessEchoView;
-@property (nonatomic, assign) YGMoveType *moveType;
 @end
 
 @implementation YGBrightnessAndVolumeView
@@ -280,31 +279,31 @@ static id _instance;
     CGPoint pointT = [sender translationInView:self];
     CGFloat deltaTX = fabs(pointT.x);
     CGFloat deltaTY = fabs(pointT.y);
-    if (MAX(deltaTX, deltaTY) < 10) return YGMoveTypeUnknow;
+    if (MAX(deltaTX, deltaTY) < 10) return kYGMoveTypeUnknow;
     if (deltaTX > deltaTY) {
-        return YGMoveTypeLandscape;
-    } else return YGMoveTypePortrait;
+        return kYGMoveTypeLandscape;
+    } else return kYGMoveTypePortrait;
 }
 
 // 通过相应的手势执行相应的操作
 - (void)decideWhatToChange:(UIPanGestureRecognizer *)sender
 {
     CGPoint p = [sender locationInView:self];
-    if ([self judgeMoveType:sender] == YGMoveTypePortrait) {
+    if ([self judgeMoveType:sender] == kYGMoveTypePortrait) {
         if (CGRectContainsPoint(self.brightnessView.frame, p)) {
             [self brightnessChange:sender];
         } else if (CGRectContainsPoint(self.volumeView.frame, p)) {
             [self volumeChange:sender];
         }
-    } else if ([self judgeMoveType:sender] == YGMoveTypeLandscape) {
+    } else if ([self judgeMoveType:sender] == kYGMoveTypeLandscape) {
         [self progressChange:sender handle:self.progressChangeHandle];
-    } else if ([self judgeMoveType:sender] == YGMoveTypeUnknow) return;
+    } else if ([self judgeMoveType:sender] == kYGMoveTypeUnknow) return;
 
     if (sender.state == UIGestureRecognizerStateEnded) {
-        if ([self judgeMoveType:sender] == YGMoveTypePortrait) {
+        if ([self judgeMoveType:sender] == kYGMoveTypePortrait) {
             self.progressPortraitEnd();
         }
-        if ([self judgeMoveType:sender] == YGMoveTypeLandscape) {
+        if ([self judgeMoveType:sender] == kYGMoveTypeLandscape) {
             self.progressLandscapeEnd();
         }
     }

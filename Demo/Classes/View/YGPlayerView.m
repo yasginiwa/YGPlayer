@@ -370,17 +370,18 @@ static id _instance;
 // 重置播放器
 - (void)resetPlayer
 {
-    [self removePlayItemObserverAndNotification];
-    [self removeTimeObserver];
+
     [self.player pause];
-    [self.player seekToTime:kCMTimeZero];
+    [self.player seekToTime:kCMTimeZero toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero];
     [self.playerLayer removeFromSuperlayer];
-    self.playerLayer = nil;
+    [self.asset cancelLoading];
     self.asset = nil;
     self.playerItem = nil;
-    self.player = nil;
     self.imageGenerator = nil;
     self.placeHolderView.image = nil;
+    self.player = nil;
+    [self removePlayItemObserverAndNotification];
+    [self removeTimeObserver];
 }
 
 // 添加亮度和音量调节View
@@ -597,6 +598,8 @@ static id _instance;
 // 点击按钮旋转屏幕
 - (IBAction)rotateScreen:(UIButton *)sender
 {
+    [self reShowControlPanel];
+    
     if (self.isLandscape) { // 转至竖屏
         [self setForceDeviceOrientation:UIDeviceOrientationPortrait];
     } else { // 转至横屏
@@ -608,8 +611,7 @@ static id _instance;
 // 拖拽进度条
 - (IBAction)dragProgressAction:(UISlider *)sender {
     // 把播放器控制面板显示属性设置为NO 避免拖动时触发手势隐藏面板
-    self.controlPanelShow = NO;
-    [self showOrHideControlPanel];
+    [self reShowControlPanel];
     
     [self.player pause];
     [self removeTimeObserver];
@@ -799,6 +801,13 @@ static id _instance;
         }];
         [self performSelector:@selector(autoFadeOutControlPanelAndStatusBar) withObject:nil afterDelay:10.f];
     }
+}
+
+// 重新显示播放器控制面板
+- (void)reShowControlPanel
+{
+    self.controlPanelShow = NO;
+    [self showOrHideControlPanel];
 }
 
 // 显示播放控制面板

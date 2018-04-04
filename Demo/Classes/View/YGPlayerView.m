@@ -188,7 +188,6 @@ static id _instance;
 @property (nonatomic, strong) YGPreviewView *previewView;
 @property (nonatomic, strong) NSMutableArray *thumbImages;
 @property (nonatomic, strong) AVAssetImageGenerator *imageGenerator;
-@property (nonatomic, assign, getter=isEndedDrag) BOOL endedDrag;
 @end
 
 @implementation YGPlayerView
@@ -454,7 +453,7 @@ static id _instance;
     UIButton *replayBtn = [UIButton buttonWithType:UIButtonTypeCustom];
     [self.cover addSubview:replayBtn];
     [replayBtn setImage:[UIImage imageNamed:@"replay"] forState:UIControlStateNormal];
-    replayBtn.titleLabel.font = [UIFont systemFontOfSize:24];
+    replayBtn.titleLabel.font = [UIFont systemFontOfSize:22];
     [replayBtn setTitle:@"重播" forState:UIControlStateNormal];
     [replayBtn setTitleColor:[UIColor colorWithRed:190/255.0 green:190/255.0 blue:190/255.0 alpha:1.0] forState:UIControlStateNormal];
     replayBtn.contentEdgeInsets = UIEdgeInsetsMake(0, 15, 0, 0);
@@ -608,8 +607,10 @@ static id _instance;
 
 // 拖拽进度条
 - (IBAction)dragProgressAction:(UISlider *)sender {
-
-    self.endedDrag = NO;
+    // 把播放器控制面板显示属性设置为NO 避免拖动时触发手势隐藏面板
+    self.controlPanelShow = NO;
+    [self showOrHideControlPanel];
+    
     [self.player pause];
     [self removeTimeObserver];
     self.currentTimeLabel.text = [NSString stringWithTime:sender.value];
@@ -629,6 +630,7 @@ static id _instance;
 // 横向手势拖拽时显示进度条或者缩略图
 - (void)gestureDragProgress:(CGFloat)delta
 {
+    self.controlPanelShow = NO;
     NSTimeInterval currentTime = CMTimeGetSeconds(self.player.currentTime);
     currentTime = currentTime + delta;
     self.progressSlider.value = currentTime;
@@ -638,7 +640,8 @@ static id _instance;
 // 进度条拖拽结束
 - (void)progressDragEnd:(UISlider *)sender
 {
-    self.endedDrag = YES;
+    // 把播放器控制面板显示属性设置为NO 避免拖动时触发手势隐藏面板
+    self.controlPanelShow = NO;
     
     [UIView animateWithDuration:.5f animations:^{
         self.previewView.alpha = .0f;
@@ -783,12 +786,12 @@ static id _instance;
 // 显示或隐藏播放器控制面板
 - (void)showOrHideControlPanel
 {
-    if (self.controlPanelIsShowing && !self.isEndedDrag) {
+    if (self.controlPanelIsShowing) {
         [self hideControlPanel];
         if (self.isLandscape) {
             [self hideStatusBar];
         }
-    } else if (!self.controlPanelIsShowing && self.isEndedDrag){
+    } else {
         [NSObject cancelPreviousPerformRequestsWithTarget:self];
         [UIView animateWithDuration:.5f animations:^{
             [self showControlPanel];
@@ -830,15 +833,13 @@ static id _instance;
 // 显示状态栏
 - (void)showStatusBar
 {
-    UIView *statusBar = [[[UIApplication sharedApplication] valueForKey:@"statusBarWindow"] valueForKey:@"statusBar"];
-    statusBar.alpha = 1.f;
+    [UIApplication sharedApplication].statusBarHidden = NO;
 }
 
 // 隐藏状态栏
 - (void)hideStatusBar
 {
-    UIView *statusBar = [[[UIApplication sharedApplication] valueForKey:@"statusBarWindow"] valueForKey:@"statusBar"];
-    statusBar.alpha = .0f;
+    [UIApplication sharedApplication].statusBarHidden = YES;
 }
 
 // 根据方向改变状态栏的风格

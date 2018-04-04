@@ -272,6 +272,8 @@ static id _instance;
     [self addGestureRecognizer:panGesture];
 }
 
+
+
 // 通过pan拖拽时的移动位置的绝对值判断手势类型 |pointT.x| > |pointT.y| 横向手势  |pointT.y| < |pointT.x| 竖向手势
 - (YGMoveType)judgeMoveType:(UIPanGestureRecognizer *)sender
 {

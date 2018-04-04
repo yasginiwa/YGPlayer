@@ -9,6 +9,7 @@ An awesome player base on AVFoundation.Easier API to use and more less CPU loadi
 ## Features
 * Based on iOS AVFoundation.
 * Support Left slider up and down alter brightness, right slider up and down alter volume.
+* Support Landscape gesture to forward or backward video progress.
 * Support select episode.
 * Player adapt device landscape and portrait.
 * Support Drag to forward or backward video and preview thumbnail.

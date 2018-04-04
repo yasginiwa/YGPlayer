@@ -370,7 +370,8 @@ static id _instance;
 // 重置播放器
 - (void)resetPlayer
 {
-
+    [self removePlayItemObserverAndNotification];
+    [self removeTimeObserver];
     [self.player pause];
     [self.player seekToTime:kCMTimeZero toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero];
     [self.playerLayer removeFromSuperlayer];
@@ -380,8 +381,6 @@ static id _instance;
     self.imageGenerator = nil;
     self.placeHolderView.image = nil;
     self.player = nil;
-    [self removePlayItemObserverAndNotification];
-    [self removeTimeObserver];
 }
 
 // 添加亮度和音量调节View

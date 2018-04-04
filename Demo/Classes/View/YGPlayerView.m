@@ -188,6 +188,7 @@ static id _instance;
 @property (nonatomic, strong) YGPreviewView *previewView;
 @property (nonatomic, strong) NSMutableArray *thumbImages;
 @property (nonatomic, strong) AVAssetImageGenerator *imageGenerator;
+@property (nonatomic, assign, getter=isEndedDrag) BOOL endedDrag;
 @end
 
 @implementation YGPlayerView
@@ -600,9 +601,8 @@ static id _instance;
 
 // 拖拽进度条
 - (IBAction)dragProgressAction:(UISlider *)sender {
-    // 取消之前的隐藏播放控制面板的操作
-    [self cancelHideControllPanelAndStatusBar];
-    
+
+    self.endedDrag = NO;
     [self.player pause];
     [self removeTimeObserver];
     self.currentTimeLabel.text = [NSString stringWithTime:sender.value];
@@ -631,6 +631,8 @@ static id _instance;
 // 进度条拖拽结束
 - (void)progressDragEnd:(UISlider *)sender
 {
+    self.endedDrag = YES;
+    
     [UIView animateWithDuration:.5f animations:^{
         self.previewView.alpha = .0f;
     }];
@@ -774,12 +776,12 @@ static id _instance;
 // 显示或隐藏播放器控制面板
 - (void)showOrHideControlPanel
 {
-    if (self.controlPanelIsShowing) {
+    if (self.controlPanelIsShowing && !self.isEndedDrag) {
         [self hideControlPanel];
         if (self.isLandscape) {
             [self hideStatusBar];
         }
-    } else {
+    } else if (!self.controlPanelIsShowing && self.isEndedDrag){
         [NSObject cancelPreviousPerformRequestsWithTarget:self];
         [UIView animateWithDuration:.5f animations:^{
             [self showControlPanel];
@@ -816,12 +818,6 @@ static id _instance;
     [self hideControlPanel];
     if (!self.isLandscape) return;
     [self hideStatusBar];
-}
-
-// 取消隐藏控制面板和状态栏
-- (void)cancelHideControllPanelAndStatusBar
-{
-    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(autoFadeOutControlPanelAndStatusBar) object:nil];
 }
 
 // 显示状态栏

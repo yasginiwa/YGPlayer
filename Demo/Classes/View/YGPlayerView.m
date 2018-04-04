@@ -555,6 +555,7 @@ static id _instance;
     }
 }
 
+
 // 横竖屏适配
 - (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection
 {

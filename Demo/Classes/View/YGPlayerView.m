@@ -378,9 +378,9 @@ static id _instance;
     [self.asset cancelLoading];
     self.asset = nil;
     self.playerItem = nil;
-    self.imageGenerator = nil;
     self.placeHolderView.image = nil;
     self.player = nil;
+    self.imageGenerator = nil;
 }
 
 // 添加亮度和音量调节View

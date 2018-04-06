@@ -28,12 +28,14 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    self.view.backgroundColor = [UIColor whiteColor];
     [self setupPlayerView];
 }
 
 
 - (void)didReceiveMemoryWarning
 {
+    [super didReceiveMemoryWarning];
     NSLog(@"didReceiveMemoryWarning-------");
 }
 

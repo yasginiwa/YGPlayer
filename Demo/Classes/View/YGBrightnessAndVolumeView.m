@@ -279,7 +279,7 @@ static id _instance;
     CGPoint pointT = [sender translationInView:self];
     CGFloat deltaTX = fabs(pointT.x);
     CGFloat deltaTY = fabs(pointT.y);
-    if (MAX(deltaTX, deltaTY) < 10) return kYGMoveTypeUnknow;
+    if (MAX(deltaTX, deltaTY) < 20) return kYGMoveTypeUnknow;
     if (deltaTX > deltaTY) {
         return kYGMoveTypeLandscape;
     } else return kYGMoveTypePortrait;

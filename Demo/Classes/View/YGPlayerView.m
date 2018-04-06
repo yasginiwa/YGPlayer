@@ -154,11 +154,13 @@ static id _instance;
 
 @interface YGPlayerView () <UITableViewDelegate, UITableViewDataSource>
 @property (nonatomic, strong) NSMutableArray *playInfos;
+@property (nonatomic, strong) YGPlayInfo *currentPlayInfo;
 @property (nonatomic, strong) AVPlayer *player;
 @property (nonatomic, strong) AVPlayerItem *playerItem;
 @property (nonatomic, strong) AVURLAsset *asset;
 @property (nonatomic, strong) AVPlayerLayer *playerLayer;
 @property (nonatomic, strong) id timeObserver;
+@property (nonatomic, assign) NSTimeInterval totalTime;
 @property (weak, nonatomic) IBOutlet UISlider *progressSlider;
 @property (weak, nonatomic) IBOutlet UIProgressView *loadedView;
 @property (weak, nonatomic) IBOutlet UIImageView *placeHolderView;
@@ -259,7 +261,6 @@ static id _instance;
     self.loadedView.progress = .0f;
     self.currentTimeLabel.text = @"00:00";
     self.totalTimeLabel.text = @"00:00";
-    
     [self.progressSlider addTarget:self action:@selector(progressDragEnd:) forControlEvents:UIControlEventTouchUpInside | UIControlEventTouchCancel];
 }
 
@@ -295,11 +296,12 @@ static id _instance;
 
 - (void)playWithPlayInfo:(YGPlayInfo *)playInfo
 {
-    // 清空缩略图数组
-    [self.thumbImages removeAllObjects];
-    
+
     // 重置player
     [self resetPlayer];
+    
+    // 清空缩略图数组
+    [self.thumbImages removeAllObjects];
     
     // 切换隐藏控制面板
     [self showOrHideControlPanel];
@@ -311,10 +313,17 @@ static id _instance;
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [defaults setObject:playInfo.url forKey:@"currentPlayingUrl"];
     
-    // 因为replaceCurrentItemWithPlayerItem在使用时会卡住主线程 重新创建player解决
-    self.player = [self setupPlayer];
     self.asset = [AVURLAsset assetWithURL:[NSURL URLWithString:playInfo.url]];
     self.playerItem = [AVPlayerItem playerItemWithAsset:self.asset];
+    
+    // 获取视频时长 网速慢可能会需要等待 卡住主线程
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        self.totalTime = CMTimeGetSeconds(self.asset.duration);
+    });
+    
+    // 因为replaceCurrentItemWithPlayerItem在使用时会卡住主线程 重新创建player解决
+    if (self.player) return;
+    self.player = [self setupPlayer];
     
     // 添加时间周期OB、OB和通知
     [self addTimerObserver];
@@ -322,13 +331,15 @@ static id _instance;
     
     // 设置播放器标题
     self.titleLabel.text = playInfo.title;
+    self.currentPlayInfo = [[YGPlayInfo alloc] init];
+    self.currentPlayInfo = playInfo;
     self.placeHolderView.hidden = NO;
     self.placeHolderView.image = [UIImage imageNamed:playInfo.placeholder];
     
     [self.waitingView startAnimating];
     
     [self.player replaceCurrentItemWithPlayerItem:self.playerItem];
-    
+
     // 刚开始切换视频时 rate为0时显示视频海报(placeholder)
     if (self.player.rate > 0) {
         self.placeHolderView.hidden = YES;
@@ -338,23 +349,7 @@ static id _instance;
         [self.waitingView startAnimating];
     }
     
-    // 获取视频时长 网速慢可能会需要等待 卡住主线程
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        NSTimeInterval totalTime = CMTimeGetSeconds(self.asset.duration);
-        // 截屏次数
-        int captureTimes = (totalTime / 10);
-        for (int i = 0; i < captureTimes; i++) {
-            UIImage *image = [self thumbImageForVideo:[NSURL URLWithString:playInfo.url] atTime:10 * i];
-            if (image) {
-                [[self mutableArrayValueForKey:@"thumbImages"] addObject:image];
-            }
-        }
-        // 添加视频最后一帧缩略图到数组
-        UIImage *lastImage = [self thumbImageForVideo:[NSURL URLWithString:playInfo.url] atTime:totalTime];
-        if (lastImage) {
-            [[self mutableArrayValueForKey:@"thumbImages"] addObject:lastImage];
-        }
-    });
+
 }
 
 // 创建播放器
@@ -373,13 +368,17 @@ static id _instance;
     [self removePlayItemObserverAndNotification];
     [self removeTimeObserver];
     [self.player pause];
-    [self.player seekToTime:kCMTimeZero toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero];
-    [self.playerLayer removeFromSuperlayer];
+    self.player.rate = .0f;
+    self.totalTime = .0f;
     [self.asset cancelLoading];
-    self.asset = nil;
+    [self.player.currentItem cancelPendingSeeks];
+    [self.player.currentItem.asset cancelLoading];
+    [self.player replaceCurrentItemWithPlayerItem:nil];
+    [self.playerLayer removeFromSuperlayer];
     self.playerItem = nil;
     self.placeHolderView.image = nil;
     self.player = nil;
+    self.currentPlayInfo = nil;
     self.imageGenerator = nil;
 }
 
@@ -478,14 +477,30 @@ static id _instance;
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context
 {
     AVPlayerItem *playItem = (AVPlayerItem *)object;
-    NSTimeInterval totalTime = CMTimeGetSeconds(self.asset.duration);
     if ([keyPath isEqualToString:@"status"]) { // 检测播放器状态
         AVPlayerStatus status = [[change objectForKey:@"new"] intValue];
         if (status == AVPlayerStatusReadyToPlay) { // 达到能播放的状态
-            self.totalTimeLabel.text = [NSString stringWithTime:totalTime];
+            // 截取缩略图
+            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                // 截屏次数
+                int captureTimes = (self.totalTime / 10);
+                for (int i = 0; i < captureTimes; i++) {
+                    UIImage *image = [self thumbImageForVideo:[NSURL URLWithString:self.currentPlayInfo.url] atTime:10 * i];
+                    if (image) {
+                        [[self mutableArrayValueForKey:@"thumbImages"] addObject:image];
+                    }
+                }
+                // 添加视频最后一帧缩略图到数组
+                UIImage *lastImage = [self thumbImageForVideo:[NSURL URLWithString:self.currentPlayInfo.url] atTime:self.totalTime];
+                if (lastImage) {
+                    [[self mutableArrayValueForKey:@"thumbImages"] addObject:lastImage];
+                }
+            });
+            
+            self.totalTimeLabel.text = [NSString stringWithTime:self.totalTime];
             self.placeHolderView.hidden = YES;
             self.placeHolderView.image = nil;
-            self.progressSlider.maximumValue = totalTime;
+            self.progressSlider.maximumValue = self.totalTime;
             [self playOrPauseAction];
         } else if (status == AVPlayerStatusFailed) { // 播放错误 资源不存在 网络问题等等
             [self.waitingView stopAnimating];
@@ -620,10 +635,12 @@ static id _instance;
     self.previewView.alpha = 1.f;
     self.previewView.title = [NSString stringWithTime:sender.value];
     
-    NSTimeInterval totalTime = CMTimeGetSeconds(self.asset.duration);
-    [self.previewView.progressView setProgress:(sender.value / totalTime)  animated:YES];
+    [self.previewView.progressView setProgress:(sender.value / self.totalTime)  animated:YES];
     if (imageIndex < self.thumbImages.count) {
         self.previewView.image = self.thumbImages[imageIndex];
+        if (sender.value == self.totalTime) {
+            self.previewView.image = [self.thumbImages lastObject];
+        }
     } else {
         self.previewView.image = nil;
     }
@@ -648,7 +665,7 @@ static id _instance;
     [UIView animateWithDuration:.5f animations:^{
         self.previewView.alpha = .0f;
     }];
-    [self.player seekToTime:CMTimeMake(self.progressSlider.value, 1.0)];
+    [self.player seekToTime:CMTimeMake(self.progressSlider.value, 1.0) toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero];
     [self addTimerObserver];
     [self.player play];
     // 延迟10.0秒后隐藏播放控制面板

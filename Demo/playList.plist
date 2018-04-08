@@ -4,7 +4,7 @@
 <array>
 	<dict>
 		<key>url</key>
-		<string>http://www.crowncake.cn:18080/wav/no.9.mp4</string>
+		<string>http://220.249.115.46:18080/wav/no.9.mp4</string>
 		<key>artist</key>
 		<string>T-ara </string>
 		<key>title</key>
@@ -14,7 +14,7 @@
 	</dict>
 	<dict>
 		<key>url</key>
-		<string>http://www.crowncake.cn:18080/wav/day_by_day.mp4</string>
+		<string>http://220.249.115.46:18080/wav/day_by_day.mp4</string>
 		<key>artist</key>
 		<string>T-ara</string>
 		<key>title</key>
@@ -24,7 +24,7 @@
 	</dict>
 	<dict>
 		<key>url</key>
-		<string>http://www.crowncake.cn:18080/wav/Lovey_Dovey.mp4</string>
+		<string>http://220.249.115.46:18080/wav/Lovey_Dovey.mp4</string>
 		<key>artist</key>
 		<string>T-ara</string>
 		<key>title</key>
@@ -34,7 +34,7 @@
 	</dict>
 	<dict>
 		<key>url</key>
-		<string>http://www.crowncake.cn:18080/wav/ganghaoyujianni.mp4</string>
+		<string>http://220.249.115.46:18080/wav/ganghaoyujianni.mp4</string>
 		<key>artist</key>
 		<string>李玉刚</string>
 		<key>title</key>

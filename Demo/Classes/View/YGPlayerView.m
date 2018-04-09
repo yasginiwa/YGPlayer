@@ -325,34 +325,31 @@ static id _instance;
     
     [self.waitingView startAnimating];
     
-    // 截取缩略图
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    dispatch_group_t group = dispatch_group_create();
+    dispatch_queue_t queue = dispatch_queue_create("queue", DISPATCH_QUEUE_SERIAL);
+    dispatch_group_async(group, queue, ^{
         self.totalTime = CMTimeGetSeconds(self.asset.duration);
+    });
+    dispatch_group_async(group, queue, ^{
         // 截屏次数
         int captureTimes = (self.totalTime / 10);
         for (int i = 0; i < captureTimes; i++) {
             UIImage *image = [self thumbImageForVideo:[NSURL URLWithString:playInfo.url] atTime:10 * i];
-            if (image) {
-                [[self mutableArrayValueForKey:@"thumbImages"] addObject:image];
-            }
+            if (image == nil && i >= 1) {
+                i--;
+                continue;
+            };
+            [[self mutableArrayValueForKey:@"thumbImages"] addObject:image];
         }
+    });
+    dispatch_group_async(group, queue, ^{
         // 添加视频最后一帧缩略图到数组
         UIImage *lastImage = [self thumbImageForVideo:[NSURL URLWithString:playInfo.url] atTime:self.totalTime];
-        if (lastImage) {
-            [[self mutableArrayValueForKey:@"thumbImages"] addObject:lastImage];
-        }
+        if (!lastImage) return;
+        [[self mutableArrayValueForKey:@"thumbImages"] addObject:lastImage];
     });
     
     [self.player replaceCurrentItemWithPlayerItem:self.playerItem];
-
-    // 刚开始切换视频时 rate为0时显示视频海报(placeholder)
-    if (self.player.rate > 0) {
-        self.placeHolderView.hidden = YES;
-        [self.waitingView stopAnimating];
-    } else {
-        self.placeHolderView.hidden = NO;
-        [self.waitingView startAnimating];
-    }
     
     // 添加时间周期OB、OB和通知
     [self addTimerObserver];
@@ -373,6 +370,8 @@ static id _instance;
 - (void)resetPlayer
 {
     [self.player pause];
+    [self removePlayItemObserverAndNotification];
+    [self removeTimeObserver];
     [self.player seekToTime:kCMTimeZero toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero];
     [self.asset cancelLoading];
     [self.player.currentItem cancelPendingSeeks];
@@ -385,9 +384,6 @@ static id _instance;
     self.playerItem = nil;
     self.placeHolderView.image = nil;
     self.player = nil;
-    
-    [self removePlayItemObserverAndNotification];
-    [self removeTimeObserver];
 }
 
 // 添加亮度和音量调节View
@@ -414,7 +410,6 @@ static id _instance;
     [self.playerItem addObserver:self forKeyPath:@"loadedTimeRanges" options:NSKeyValueObservingOptionNew context:NULL];
     [self.playerItem addObserver:self forKeyPath:@"playbackBufferEmpty" options:NSKeyValueObservingOptionNew context:NULL];
     [self.playerItem addObserver:self forKeyPath:@"playbackLikelyToKeepUp" options:NSKeyValueObservingOptionNew context:NULL];
-    [self.player addObserver:self forKeyPath:@"rate" options:NSKeyValueObservingOptionNew context:NULL];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(playFinished:) name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(changeStatusBarStyle:) name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
 }
@@ -426,7 +421,6 @@ static id _instance;
     [self.playerItem removeObserver:self forKeyPath:@"loadedTimeRanges"];
     [self.playerItem removeObserver:self forKeyPath:@"playbackBufferEmpty"];
     [self.playerItem removeObserver:self forKeyPath:@"playbackLikelyToKeepUp"];
-    [self.player removeObserver:self forKeyPath:@"rate"];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
@@ -489,9 +483,8 @@ static id _instance;
         AVPlayerStatus status = [[change objectForKey:@"new"] intValue];
         if (status == AVPlayerStatusReadyToPlay) { // 达到能播放的状态
             self.totalTimeLabel.text = [NSString stringWithTime:self.totalTime];
-            self.placeHolderView.hidden = YES;
-            self.placeHolderView.image = nil;
             self.progressSlider.maximumValue = self.totalTime;
+            self.placeHolderView.image = nil;
             [self playOrPauseAction];
         } else if (status == AVPlayerStatusFailed) { // 播放错误 资源不存在 网络问题等等
             [self.waitingView stopAnimating];
@@ -525,7 +518,7 @@ static id _instance;
         CMTimeRange timeRange = [[loadedTimeRanges firstObject] CMTimeRangeValue];
         NSTimeInterval bufferingTime = CMTimeGetSeconds(timeRange.start) + CMTimeGetSeconds(timeRange.duration);
         [self.loadedView setProgress:bufferingTime / self.totalTime animated:YES];
-        if (bufferingTime > CMTimeGetSeconds(playItem.currentTime) + 5.f) {
+        if (bufferingTime >= CMTimeGetSeconds(playItem.currentTime) + 5.f) {
             [self.waitingView stopAnimating];
         }
     } else if ([keyPath isEqualToString:@"playbackBufferEmpty"]) {  // 缓存为空
@@ -543,19 +536,6 @@ static id _instance;
                 self.previewView.image = self.thumbImages[imageIndex];
             }
         });
-    } else if ([keyPath isEqualToString:@"rate"]) {
-        AVPlayer *player = (AVPlayer *)object;
-        if (player.reasonForWaitingToPlay == AVPlayerWaitingWhileEvaluatingBufferingRateReason) {
-            [self.waitingView startAnimating];
-            [self showOrHideControlPanel];
-        }
-        if (player.rate == .0f) {
-            [self.playBtn setImage:[UIImage imageNamed:@"Play"] forState:UIControlStateNormal];
-            [self.centerPlayBtn setImage:[UIImage imageNamed:@"player_start_iphone_fullscreen"] forState:UIControlStateNormal];
-        } else {
-            [self.playBtn setImage:[UIImage imageNamed:@"Stop"] forState:UIControlStateNormal];
-            [self.centerPlayBtn setImage:[UIImage imageNamed:@"player_pause_iphone_fullscreen"] forState:UIControlStateNormal];
-        }
     }
 }
 
@@ -773,10 +753,12 @@ static id _instance;
 {
     if (self.player.timeControlStatus == AVPlayerTimeControlStatusPaused) {
         [self.player play];
+        self.placeHolderView.hidden = YES;
         [self.playBtn setImage:[UIImage imageNamed:@"Stop"] forState:UIControlStateNormal];
         [self.centerPlayBtn setImage:[UIImage imageNamed:@"player_pause_iphone_fullscreen"] forState:UIControlStateNormal];
     } else if (self.player.timeControlStatus == AVPlayerTimeControlStatusPlaying) {
         [self.player pause];
+        self.placeHolderView.hidden = YES;
         [self.playBtn setImage:[UIImage imageNamed:@"Play"] forState:UIControlStateNormal];
         [self.centerPlayBtn setImage:[UIImage imageNamed:@"player_start_iphone_fullscreen"] forState:UIControlStateNormal];
     }

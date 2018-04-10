@@ -267,10 +267,14 @@ static id _instance;
 {
     [super layoutSubviews];
     self.playerLayer.frame = self.bounds;
-    self.cover.frame = self.bounds;
     self.replayBtn.frame = CGRectMake(0, 0, 200, 155);
     self.replayBtn.center = self.center;
     self.brightnessAndVolumeView.frame = self.bounds;
+    
+    [self.cover mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.top.bottom.left.right.equalTo(self);
+    }];
+    
     
     [self.previewView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.width.mas_equalTo(180.f);
@@ -325,6 +329,7 @@ static id _instance;
     
     [self.waitingView startAnimating];
     
+    // 建立串行调度组 确保截图任务的先后完成
     dispatch_group_t group = dispatch_group_create();
     dispatch_queue_t queue = dispatch_queue_create("queue", DISPATCH_QUEUE_SERIAL);
     dispatch_group_async(group, queue, ^{
@@ -335,7 +340,8 @@ static id _instance;
         int captureTimes = (self.totalTime / 10);
         for (int i = 0; i < captureTimes; i++) {
             UIImage *image = [self thumbImageForVideo:[NSURL URLWithString:playInfo.url] atTime:10 * i];
-            if (image == nil && i >= 1) {
+            if (image == nil) {
+                // 未截取到图片 回退index
                 i--;
                 continue;
             };
@@ -373,7 +379,6 @@ static id _instance;
     [self removePlayItemObserverAndNotification];
     [self removeTimeObserver];
     [self.player seekToTime:kCMTimeZero toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero];
-    [self.asset cancelLoading];
     [self.player.currentItem cancelPendingSeeks];
     [self.player.currentItem.asset cancelLoading];
     self.imageGenerator = nil;
@@ -410,6 +415,7 @@ static id _instance;
     [self.playerItem addObserver:self forKeyPath:@"loadedTimeRanges" options:NSKeyValueObservingOptionNew context:NULL];
     [self.playerItem addObserver:self forKeyPath:@"playbackBufferEmpty" options:NSKeyValueObservingOptionNew context:NULL];
     [self.playerItem addObserver:self forKeyPath:@"playbackLikelyToKeepUp" options:NSKeyValueObservingOptionNew context:NULL];
+    [self.player addObserver:self forKeyPath:@"rate" options:NSKeyValueObservingOptionNew context:NULL];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(playFinished:) name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(changeStatusBarStyle:) name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
 }
@@ -421,6 +427,7 @@ static id _instance;
     [self.playerItem removeObserver:self forKeyPath:@"loadedTimeRanges"];
     [self.playerItem removeObserver:self forKeyPath:@"playbackBufferEmpty"];
     [self.playerItem removeObserver:self forKeyPath:@"playbackLikelyToKeepUp"];
+    [self.player removeObserver:self forKeyPath:@"rate"];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
@@ -454,7 +461,7 @@ static id _instance;
     UIButton *replayBtn = [UIButton buttonWithType:UIButtonTypeCustom];
     [self.cover addSubview:replayBtn];
     [replayBtn setImage:[UIImage imageNamed:@"replay"] forState:UIControlStateNormal];
-    replayBtn.titleLabel.font = [UIFont systemFontOfSize:22];
+    replayBtn.titleLabel.font = [UIFont systemFontOfSize:20];
     [replayBtn setTitle:@"重播" forState:UIControlStateNormal];
     [replayBtn setTitleColor:[UIColor colorWithRed:190/255.0 green:190/255.0 blue:190/255.0 alpha:1.0] forState:UIControlStateNormal];
     replayBtn.contentEdgeInsets = UIEdgeInsetsMake(0, 15, 0, 0);
@@ -536,9 +543,19 @@ static id _instance;
                 self.previewView.image = self.thumbImages[imageIndex];
             }
         });
+    } else if ([keyPath isEqualToString:@"rate"]) {
+        CGFloat rate = [[change objectForKey:@"new"] intValue];
+        if (rate == .0f) {
+            self.placeHolderView.hidden = YES;
+            [self.playBtn setImage:[UIImage imageNamed:@"Play"] forState:UIControlStateNormal];
+            [self.centerPlayBtn setImage:[UIImage imageNamed:@"player_start_iphone_fullscreen"] forState:UIControlStateNormal];
+        } else if (rate > .0f) {
+            self.placeHolderView.hidden = NO;
+            [self.playBtn setImage:[UIImage imageNamed:@"Stop"] forState:UIControlStateNormal];
+            [self.centerPlayBtn setImage:[UIImage imageNamed:@"player_pause_iphone_fullscreen"] forState:UIControlStateNormal];
+        }
     }
 }
-
 
 // 横竖屏适配
 - (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection
@@ -725,7 +742,7 @@ static id _instance;
     cell.textLabel.font = [UIFont systemFontOfSize:13];
     cell.textLabel.textAlignment = NSTextAlignmentLeft;
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
-    cell.textLabel.text = [NSString stringWithFormat:@"%@ %@", playInfo.artist, playInfo.title];
+    cell.textLabel.text = [NSString stringWithFormat:@"%@ - %@", playInfo.title, playInfo.artist];
     return cell;
 }
 
@@ -751,16 +768,31 @@ static id _instance;
 // 播放或暂停
 - (void)playOrPause
 {
-    if (self.player.timeControlStatus == AVPlayerTimeControlStatusPaused) {
-        [self.player play];
-        self.placeHolderView.hidden = YES;
-        [self.playBtn setImage:[UIImage imageNamed:@"Stop"] forState:UIControlStateNormal];
-        [self.centerPlayBtn setImage:[UIImage imageNamed:@"player_pause_iphone_fullscreen"] forState:UIControlStateNormal];
-    } else if (self.player.timeControlStatus == AVPlayerTimeControlStatusPlaying) {
+    if ([self isPlaying]) {
         [self.player pause];
-        self.placeHolderView.hidden = YES;
-        [self.playBtn setImage:[UIImage imageNamed:@"Play"] forState:UIControlStateNormal];
-        [self.centerPlayBtn setImage:[UIImage imageNamed:@"player_start_iphone_fullscreen"] forState:UIControlStateNormal];
+    } else {
+        [self.player play];
+    }
+}
+
+// 判断播放器是否播放
+- (BOOL)isPlaying
+{
+    AVPlayerTimeControlStatus status = self.player.timeControlStatus;
+    switch (status) {
+        case AVPlayerTimeControlStatusPlaying:
+
+            return YES;
+            break;
+            
+        case AVPlayerTimeControlStatusPaused:
+
+            return NO;
+            break;
+            
+        case AVPlayerTimeControlStatusWaitingToPlayAtSpecifiedRate:
+            return NO;
+            break;
     }
 }
 

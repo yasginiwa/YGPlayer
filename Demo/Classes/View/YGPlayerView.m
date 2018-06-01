@@ -564,10 +564,15 @@ static id _instance;
     [super traitCollectionDidChange:previousTraitCollection];
     if (self.traitCollection.verticalSizeClass == UIUserInterfaceSizeClassRegular) { // 转至竖屏
         [self mas_remakeConstraints:^(MASConstraintMaker *make) {
-            make.top.equalTo(@(20));
-            make.left.equalTo(@(0));
-            make.width.equalTo(@(scrnW));
-            make.height.equalTo(@(scrnW * 9 / 16));
+//            make.top.equalTo(@(20));
+//            make.left.equalTo(@(0));
+//            make.width.equalTo(@(scrnW));
+//            make.height.equalTo(@(scrnW * 9 / 16));
+            
+            make.top.equalTo(self.topConstraint);
+            make.left.equalTo(self.leftConstraint);
+            make.width.equalTo(self.widthConstraint);
+            make.height.equalTo(self.heightConstraint);
         }];
         self.episodeBtn.hidden = YES;
         [self.rotateBtn setImage:[UIImage imageNamed:@"player_fullScreen_iphone"] forState:UIControlStateNormal];

@@ -10,5 +10,9 @@
 @class YGPlayInfo;
 
 @interface YGPlayerView : UIView
+@property (nonatomic, strong) NSNumber *leftConstraint;
+@property (nonatomic, strong) NSNumber *topConstraint;
+@property (nonatomic, strong) NSNumber *widthConstraint;
+@property (nonatomic, strong) NSNumber *heightConstraint;
 - (void)playWithPlayInfo:(YGPlayInfo *)playInfo;
 @end

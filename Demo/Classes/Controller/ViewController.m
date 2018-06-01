@@ -43,6 +43,10 @@
 - (void)setupPlayerView
 {
     YGPlayerView *playerView = [[[NSBundle mainBundle] loadNibNamed:@"YGPlayerView" owner:nil options:nil] lastObject];
+    playerView.leftConstraint = @(0);
+    playerView.topConstraint = @(50);
+    playerView.widthConstraint = @(scrnW);
+    playerView.heightConstraint = @(scrnW * 9 / 16);
     [self.view addSubview:playerView];
     YGPlayInfo *playInfo = [self.playInfos firstObject];
     [playerView playWithPlayInfo:playInfo];
